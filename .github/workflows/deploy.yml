@@ -1,0 +1,80 @@
+name: Deploy → offlinesync.techparse.fr
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # déclenchement manuel possible depuis GitHub
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout (pour vérifier que le code est correct) ─────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Vérifier la syntaxe PHP ──────────────────────────────────────────
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+
+      - name: Validate composer.json (plugin)
+        run: composer validate --no-check-publish
+
+      - name: Validate composer.json (demo)
+        run: composer validate --no-check-publish
+        working-directory: demo
+
+      # ── 3. Déploiement sur le serveur via SSH ────────────────────────────────
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          ssh-keyscan -p ${{ secrets.SSH_PORT || 22 }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT || 22 }}
+          REMOTE_DIR: ${{ secrets.REMOTE_DIR }}
+        run: |
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" bash << 'ENDSSH'
+            set -e
+            echo "── Pull du code ──────────────────────────────────────────"
+            cd $REMOTE_DIR
+            git pull origin main
+
+            echo "── Dépendances ───────────────────────────────────────────"
+            cd demo
+            composer install --no-dev --optimize-autoloader --no-interaction
+
+            echo "── Cache Laravel ─────────────────────────────────────────"
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            echo "── Migrations ────────────────────────────────────────────"
+            php artisan migrate --force
+
+            echo "── Permissions storage ───────────────────────────────────"
+            chmod -R 775 storage bootstrap/cache
+
+            echo "✅ Déploiement terminé !"
+          ENDSSH
+
+      # ── 4. Notification (optionnel) ──────────────────────────────────────────
+      - name: Notify success
+        if: success()
+        run: echo "✅ https://offlinesync.techparse.fr est à jour"
+
+      - name: Notify failure
+        if: failure()
+        run: echo "❌ Le déploiement a échoué — vérifier les logs CI"

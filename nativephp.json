@@ -1,0 +1,162 @@
+{
+  "namespace": "OfflineSync",
+  "version": "1.0.0",
+  "description": "Offline-first synchronization plugin for NativePHP Mobile applications",
+  "author": "Techparse",
+  "license": "proprietary",
+  
+  "bridge_functions": {
+    "OfflineSync.QueueAction": {
+      "android": "com.techparse.offlinesync.OfflineSyncFunctions.queueAction",
+      "ios": "OfflineSyncFunctions.queueAction",
+      "description": "Queue an operation (create/update/delete) for synchronization",
+      "payload_schema": {
+        "resource": "string",
+        "resource_id": "string|null",
+        "operation": "enum(create,update,delete)",
+        "data": "object",
+        "timestamp": "ISO8601"
+      },
+      "returns": "Promise<{success: boolean, queue_id: number}>"
+    },
+    
+    "OfflineSync.RunSync": {
+      "android": "com.techparse.offlinesync.OfflineSyncFunctions.runSync",
+      "ios": "OfflineSyncFunctions.runSync",
+      "description": "Trigger manual synchronization",
+      "payload_schema": {
+        "resources": "array<string>|null"
+      },
+      "returns": "Promise<{success: boolean, synced: number, failed: number, conflicts: number}>"
+    },
+    
+    "OfflineSync.GetStatus": {
+      "android": "com.techparse.offlinesync.OfflineSyncFunctions.getStatus",
+      "ios": "OfflineSyncFunctions.getStatus",
+      "description": "Get current synchronization status",
+      "returns": {
+        "pending_count": "integer",
+        "last_sync": "ISO8601|null",
+        "is_syncing": "boolean",
+        "is_online": "boolean",
+        "connection_type": "string"
+      }
+    },
+    
+    "OfflineSync.StartMonitoring": {
+      "android": "com.techparse.offlinesync.OfflineSyncFunctions.startMonitoring",
+      "ios": "OfflineSyncFunctions.startMonitoring",
+      "description": "Start connectivity monitoring and enable auto-sync",
+      "returns": "Promise<{success: boolean, monitoring: boolean}>"
+    },
+    
+    "OfflineSync.StopMonitoring": {
+      "android": "com.techparse.offlinesync.OfflineSyncFunctions.stopMonitoring",
+      "ios": "OfflineSyncFunctions.stopMonitoring",
+      "description": "Stop connectivity monitoring",
+      "returns": "Promise<{success: boolean, monitoring: boolean}>"
+    },
+    
+    "OfflineSync.SchedulePeriodicSync": {
+      "android": "com.techparse.offlinesync.OfflineSyncFunctions.schedulePeriodicSync",
+      "ios": "OfflineSyncFunctions.schedulePeriodicSync",
+      "description": "Schedule periodic background synchronization",
+      "payload_schema": {
+        "interval_minutes": "integer",
+        "require_wifi": "boolean"
+      },
+      "returns": "Promise<{success: boolean, interval_minutes: number, require_wifi: boolean}>"
+    },
+    
+    "OfflineSync.CancelPeriodicSync": {
+      "android": "com.techparse.offlinesync.OfflineSyncFunctions.cancelPeriodicSync",
+      "ios": "OfflineSyncFunctions.cancelPeriodicSync",
+      "description": "Cancel periodic background synchronization",
+      "returns": "Promise<{success: boolean}>"
+    }
+  },
+  
+  "events": [
+    "Techparse\\OfflineSync\\Events\\SyncStarted",
+    "Techparse\\OfflineSync\\Events\\SyncCompleted",
+    "Techparse\\OfflineSync\\Events\\SyncFailed",
+    "Techparse\\OfflineSync\\Events\\ItemQueued",
+    "Techparse\\OfflineSync\\Events\\ItemSynced",
+    "Techparse\\OfflineSync\\Events\\ConflictDetected",
+    "Techparse\\OfflineSync\\Events\\QueuePurged"
+  ],
+  
+  "android": {
+    "package": "com.techparse.offlinesync",
+    "min_sdk": 24,
+    "target_sdk": 34,
+    "permissions": [
+      "android.permission.INTERNET",
+      "android.permission.ACCESS_NETWORK_STATE",
+      "android.permission.ACCESS_WIFI_STATE",
+      "android.permission.CHANGE_NETWORK_STATE"
+    ],
+    "dependencies": {
+      "androidx.work:work-runtime-ktx": "2.9.0",
+      "com.squareup.okhttp3:okhttp": "4.12.0",
+      "org.jetbrains.kotlinx:kotlinx-coroutines-android": "1.7.3"
+    },
+    "proguard_rules": "native/android/proguard-rules.pro"
+  },
+  
+  "ios": {
+    "bundle_id": "com.techparse.offlinesync",
+    "min_ios_version": "14.0",
+    "capabilities": [
+      "NetworkExtensions",
+      "BackgroundModes"
+    ],
+    "background_modes": [
+      "fetch",
+      "processing"
+    ],
+    "frameworks": [
+      "Network",
+      "BackgroundTasks"
+    ],
+    "permissions": {
+      "NSLocalNetworkUsageDescription": "This app needs network access to synchronize your data with the server.",
+      "NSAppTransportSecurity": {
+        "NSAllowsArbitraryLoads": false
+      }
+    }
+  },
+  
+  "configuration": {
+    "config_file": "config/offline-sync.php",
+    "migrations": "src/Database/Migrations",
+    "routes": {
+      "prefix": "sync",
+      "middleware": ["auth:sanctum"]
+    }
+  },
+  
+  "requirements": {
+    "php": "^8.1",
+    "laravel": "^10.0|^11.0",
+    "nativephp": "^0.8.0"
+  },
+  
+  "metadata": {
+    "homepage": "https://vendorname.com/offline-sync",
+    "documentation": "https://docs.vendorname.com/offline-sync",
+    "repository": "https://github.com/vendorname/nativephp-offline-sync",
+    "support": "support@vendorname.com",
+    "tags": [
+      "offline",
+      "sync",
+      "mobile",
+      "nativephp",
+      "laravel",
+      "android",
+      "ios",
+      "queue",
+      "conflict-resolution"
+    ]
+  }
+}

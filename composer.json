@@ -1,0 +1,63 @@
+{
+    "name": "techparse/offline-sync",
+    "description": "Offline-first synchronization plugin for NativePHP Mobile",
+    "type": "nativephp-plugin",
+    "license": "proprietary",
+    "version": "0.1.0-dev",
+    "authors": [
+        {
+            "name": "Kromaric",
+            "email": "romaricyt11@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "illuminate/support": "^10.0|^11.0|^12.0",
+        "illuminate/database": "^10.0|^11.0|^12.0",
+        "illuminate/http": "^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0",
+        "pestphp/pest": "^2.0",
+        "pestphp/pest-plugin-laravel": "^2.0",
+        "mockery/mockery": "^1.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Techparse\\OfflineSync\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Techparse\\OfflineSync\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Techparse\\OfflineSync\\OfflineSyncServiceProvider"
+            ],
+            "aliases": {
+                "OfflineSync": "Techparse\\OfflineSync\\Facades\\OfflineSync"
+            }
+        },
+        "nativephp": {
+            "manifest": "nativephp.json"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage/html",
+        "test-unit": "vendor/bin/phpunit --testsuite Unit",
+        "test-feature": "vendor/bin/phpunit --testsuite Feature",
+        "test-filter": "vendor/bin/phpunit --filter"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
