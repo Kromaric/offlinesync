@@ -1,16 +1,16 @@
 <?php
 
-namespace VendorName\OfflineSync\Tests\Feature;
+namespace Techparse\OfflineSync\Tests\Feature;
 
-use VendorName\OfflineSync\Tests\TestCase;
-use VendorName\OfflineSync\SyncEngine;
-use VendorName\OfflineSync\QueueManager;
-use VendorName\OfflineSync\ConnectivityService;
-use VendorName\OfflineSync\Models\SyncQueueItem;
-use VendorName\OfflineSync\Models\SyncLog;
-use VendorName\OfflineSync\Events\SyncStarted;
-use VendorName\OfflineSync\Events\SyncCompleted;
-use VendorName\OfflineSync\Events\ItemSynced;
+use Techparse\OfflineSync\Tests\TestCase;
+use Techparse\OfflineSync\SyncEngine;
+use Techparse\OfflineSync\QueueManager;
+use Techparse\OfflineSync\ConnectivityService;
+use Techparse\OfflineSync\Models\SyncQueueItem;
+use Techparse\OfflineSync\Models\SyncLog;
+use Techparse\OfflineSync\Events\SyncStarted;
+use Techparse\OfflineSync\Events\SyncCompleted;
+use Techparse\OfflineSync\Events\ItemSynced;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 
