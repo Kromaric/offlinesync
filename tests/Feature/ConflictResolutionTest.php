@@ -1,13 +1,13 @@
 <?php
 
-namespace VendorName\OfflineSync\Tests\Feature;
+namespace Techparse\OfflineSync\Tests\Feature;
 
-use VendorName\OfflineSync\Tests\TestCase;
-use VendorName\OfflineSync\SyncEngine;
-use VendorName\OfflineSync\ConnectivityService;
-use VendorName\OfflineSync\ConflictResolver;
-use VendorName\OfflineSync\Models\SyncQueueItem;
-use VendorName\OfflineSync\Events\ConflictDetected;
+use Techparse\OfflineSync\Tests\TestCase;
+use Techparse\OfflineSync\SyncEngine;
+use Techparse\OfflineSync\ConnectivityService;
+use Techparse\OfflineSync\ConflictResolver;
+use Techparse\OfflineSync\Models\SyncQueueItem;
+use Techparse\OfflineSync\Events\ConflictDetected;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 

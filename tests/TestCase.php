@@ -1,9 +1,9 @@
 <?php
 
-namespace VendorName\OfflineSync\Tests;
+namespace Techparse\OfflineSync\Tests;
 
 use Orchestra\Testbench\TestCase as Orchestra;
-use VendorName\OfflineSync\OfflineSyncServiceProvider;
+use Techparse\OfflineSync\OfflineSyncServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -34,7 +34,7 @@ abstract class TestCase extends Orchestra
         // Configuration du plugin
         $app['config']->set('offline-sync.api_url', 'https://api.test.com');
         $app['config']->set('offline-sync.resource_mapping', [
-            'tasks' => \VendorName\OfflineSync\Tests\Fixtures\Task::class,
+            'tasks' => \Techparse\OfflineSync\Tests\Fixtures\Task::class,
         ]);
     }
 }

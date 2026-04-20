@@ -1,11 +1,11 @@
 <?php
 
-namespace VendorName\OfflineSync\Tests\Feature;
+namespace Techparse\OfflineSync\Tests\Feature;
 
-use VendorName\OfflineSync\Tests\TestCase;
-use VendorName\OfflineSync\QueueManager;
-use VendorName\OfflineSync\Models\SyncQueueItem;
-use VendorName\OfflineSync\Events\ItemQueued;
+use Techparse\OfflineSync\Tests\TestCase;
+use Techparse\OfflineSync\QueueManager;
+use Techparse\OfflineSync\Models\SyncQueueItem;
+use Techparse\OfflineSync\Events\ItemQueued;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;
 
