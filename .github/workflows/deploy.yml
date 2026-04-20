@@ -52,7 +52,7 @@ jobs:
             cd $REMOTE_DIR
             git pull origin main
 
-            echo "── Dépendances ───────────────────────────────────────────"
+            echo "── Dependances ───────────────────────────────────────────"
             cd demo
             composer install --no-dev --optimize-autoloader --no-interaction
 

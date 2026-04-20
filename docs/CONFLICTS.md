@@ -287,7 +287,7 @@ return [
 ### Changement dynamique
 
 ```php
-use VendorName\OfflineSync\Facades\OfflineSync;
+use Techparse\OfflineSync\Facades\OfflineSync;
 
 // Changer la stratégie à la volée
 config(['offline-sync.conflict_resolution.per_resource.tasks' => 'client_wins']);
@@ -377,7 +377,7 @@ Vous pouvez créer vos propres stratégies de résolution.
 
 namespace App\Sync\Strategies;
 
-use VendorName\OfflineSync\Contracts\SyncStrategy;
+use Techparse\OfflineSync\Contracts\SyncStrategy;
 
 class PriorityStrategy implements SyncStrategy
 {
@@ -416,7 +416,7 @@ class PriorityStrategy implements SyncStrategy
 **app/Providers/AppServiceProvider.php :**
 
 ```php
-use VendorName\OfflineSync\ConflictResolver;
+use Techparse\OfflineSync\ConflictResolver;
 
 public function boot()
 {
@@ -443,7 +443,7 @@ public function boot()
 ### Écouter les événements de conflit
 
 ```php
-use VendorName\OfflineSync\Events\ConflictDetected;
+use Techparse\OfflineSync\Events\ConflictDetected;
 
 Event::listen(ConflictDetected::class, function ($event) {
     Log::warning('Conflit détecté', [
@@ -537,8 +537,8 @@ R : Non, les autres items continuent. Les conflits sont reportés.
 ## 📞 Support
 
 Questions sur les conflits ?
-- 📧 Email : support@vendorname.com
-- 📖 Documentation : https://docs.vendorname.com/offline-sync
+- 📧 Email : support@techparse.fr
+- 📖 Documentation : https://docs.techparse.fr/offline-sync
 
 ---
 

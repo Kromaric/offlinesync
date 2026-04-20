@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Offline-first synchronization plugin for NativePHP Mobile applications",
   "author": "Techparse",
-  "license": "proprietary",
+  "license": "MIT",
   
   "bridge_functions": {
     "OfflineSync.QueueAction": {
@@ -143,10 +143,10 @@
   },
   
   "metadata": {
-    "homepage": "https://vendorname.com/offline-sync",
-    "documentation": "https://docs.vendorname.com/offline-sync",
-    "repository": "https://github.com/vendorname/nativephp-offline-sync",
-    "support": "support@vendorname.com",
+    "homepage": "https://techparse.fr/offline-sync",
+    "documentation": "https://github.com/Kromaric/offline-sync",
+    "repository": "https://github.com/Kromaric/offline-sync",
+    "support": "romaricyt11@gmail.com",
     "tags": [
       "offline",
       "sync",

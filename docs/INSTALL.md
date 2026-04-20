@@ -44,13 +44,13 @@ Avant de commencer, assurez-vous d'avoir :
 #### Via Composer
 
 ```bash
-composer require vendor-name/nativephp-offline-sync
+composer require techparse/offline-sync
 ```
 
 #### Vérification de l'installation
 
 ```bash
-composer show vendor-name/nativephp-offline-sync
+composer show techparse/offline-sync
 ```
 
 Vous devriez voir la version installée et les dépendances.
@@ -62,7 +62,7 @@ Vous devriez voir la version installée et les dépendances.
 Enregistrez le plugin auprès de NativePHP :
 
 ```bash
-php artisan native:plugin:register vendor-name/nativephp-offline-sync
+php artisan native:plugin:register techparse/offline-sync
 ```
 
 Cette commande :
@@ -158,7 +158,7 @@ Ajoutez le trait `Syncable` à vos modèles Eloquent :
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use VendorName\OfflineSync\Traits\Syncable;
+use Techparse\OfflineSync\Traits\Syncable;
 
 class Task extends Model
 {
@@ -233,7 +233,7 @@ php artisan migrate
 Ajoutez dans `routes/api.php` :
 
 ```php
-use VendorName\OfflineSync\Http\Controllers\SyncController;
+use Techparse\OfflineSync\Http\Controllers\SyncController;
 
 Route::middleware('auth:sanctum')->prefix('sync')->group(function () {
     Route::post('/push', [SyncController::class, 'push']);
@@ -341,7 +341,7 @@ sync:status  Show sync queue status
 php artisan tinker
 
 >>> $task = \App\Models\Task::create(['title' => 'Test Sync']);
->>> \VendorName\OfflineSync\Facades\OfflineSync::getPending()->count();
+>>> \Techparse\OfflineSync\Facades\OfflineSync::getPending()->count();
 => 1
 ```
 
@@ -429,9 +429,9 @@ Une fois l'installation terminée :
 
 Besoin d'aide ?
 
-- 📧 Email : support@vendorname.com
-- 📖 Documentation : https://docs.vendorname.com/offline-sync
-- 🐛 Issues : https://github.com/vendorname/nativephp-offline-sync/issues
+- 📧 Email : support@techparse.fr
+- 📖 Documentation : https://docs.techparse.fr/offline-sync
+- 🐛 Issues : https://github.com/Kromaric/offline-sync/issues
 
 ---
 
@@ -442,7 +442,7 @@ Votre plugin OfflineSync est maintenant installé et configuré.
 **Commencez à synchroniser :**
 
 ```php
-use VendorName\OfflineSync\Facades\OfflineSync;
+use Techparse\OfflineSync\Facades\OfflineSync;
 
 // Créer des données (automatiquement queued)
 $task = Task::create(['title' => 'Ma première tâche']);

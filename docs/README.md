@@ -298,10 +298,10 @@ Index complet de toute la documentation du plugin NativePHP Offline Sync & Backu
 
 ## 🌐 Ressources Externes
 
-- **Site officiel** : https://vendorname.com/offline-sync
-- **Documentation en ligne** : https://docs.vendorname.com/offline-sync
-- **Repository GitHub** : https://github.com/vendorname/nativephp-offline-sync
-- **Support** : support@vendorname.com
+- **Site officiel** : https://techparse.fr/offline-sync
+- **Documentation en ligne** : https://docs.techparse.fr/offline-sync
+- **Repository GitHub** : https://github.com/Kromaric/offline-sync
+- **Support** : support@techparse.fr
 
 ---
 
@@ -323,14 +323,14 @@ Pour proposer des améliorations :
 2. Éditez les fichiers .md
 3. Soumettez une Pull Request
 
-Ou envoyez vos suggestions à : docs@vendorname.com
+Ou envoyez vos suggestions à : docs@techparse.fr
 
 ---
 
 ## 📞 Support Documentation
 
 Questions sur la documentation ?
-- 📧 Email : docs@vendorname.com
+- 📧 Email : docs@techparse.fr
 - 💬 Discord : https://discord.gg/offlineSync
 
 ---
