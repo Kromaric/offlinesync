@@ -2,7 +2,7 @@
     "name": "techparse/offline-sync",
     "description": "Offline-first synchronization plugin for NativePHP Mobile",
     "type": "nativephp-plugin",
-    "license": "proprietary",
+    "license": "MIT",
     "version": "0.1.0-dev",
     "authors": [
         {

@@ -249,9 +249,9 @@ Ouvre ensuite `coverage/html/index.html` dans ton navigateur.
 ```php
 <?php
 
-namespace VendorName\OfflineSync\Tests\Unit;
+namespace Techparse\OfflineSync\Tests\Unit;
 
-use VendorName\OfflineSync\Tests\TestCase;
+use Techparse\OfflineSync\Tests\TestCase;
 
 class MyComponentTest extends TestCase
 {
@@ -427,4 +427,4 @@ Pour atteindre 100% de coverage :
 
 ---
 
-**Besoin d'aide ?** Consulte la [documentation principale](../README.md) ou contacte support@vendorname.com
+**Besoin d'aide ?** Consulte la [documentation principale](../README.md) ou contacte support@techparse.fr

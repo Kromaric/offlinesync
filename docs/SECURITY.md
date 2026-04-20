@@ -552,7 +552,7 @@ Si vous découvrez une faille de sécurité :
 
 **Ne PAS** créer d'issue publique GitHub.
 
-**Envoyer un email à :** security@vendorname.com
+**Envoyer un email à :** security@techparse.fr
 
 Inclure :
 - Description de la vulnérabilité

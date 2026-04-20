@@ -34,7 +34,7 @@ php artisan cache:clear
 php artisan view:clear
 
 # 3. Vérifier que le package est installé
-composer show vendor-name/nativephp-offline-sync
+composer show techparse/offline-sync
 ```
 
 ---
@@ -77,7 +77,7 @@ brew install php              # macOS
 **Solution :**
 
 ```bash
-php artisan native:plugin:register vendor-name/nativephp-offline-sync
+php artisan native:plugin:register techparse/offline-sync
 
 # Vérifier l'enregistrement
 php artisan native:plugin:list
@@ -107,7 +107,7 @@ tail -f storage/logs/laravel.log
 #### 1. Pas de connexion réseau
 
 ```php
-use VendorName\OfflineSync\Facades\OfflineSync;
+use Techparse\OfflineSync\Facades\OfflineSync;
 
 $status = OfflineSync::getStatus();
 dd($status['is_online']); // false ?
@@ -615,9 +615,9 @@ Ou retirer le trait `Syncable` des modèles.
 <?php
 
 // diagnostic.php
-use VendorName\OfflineSync\Facades\OfflineSync;
-use VendorName\OfflineSync\Models\SyncQueueItem;
-use VendorName\OfflineSync\Models\SyncLog;
+use Techparse\OfflineSync\Facades\OfflineSync;
+use Techparse\OfflineSync\Models\SyncQueueItem;
+use Techparse\OfflineSync\Models\SyncLog;
 
 echo "=== DIAGNOSTIC OFFLINESYNC ===\n\n";
 
@@ -674,7 +674,7 @@ php artisan tinker
 
 Lors d'une demande de support, incluez :
 
-1. **Version du plugin** : `composer show vendor-name/nativephp-offline-sync`
+1. **Version du plugin** : `composer show techparse/offline-sync`
 2. **Version PHP** : `php --version`
 3. **Version Laravel** : `php artisan --version`
 4. **Logs** : `storage/logs/laravel.log` (dernières 50 lignes)
@@ -683,9 +683,9 @@ Lors d'une demande de support, incluez :
 
 ### Canaux de support
 
-- 📧 **Email** : support@vendorname.com
-- 📖 **Documentation** : https://docs.vendorname.com
-- 🐛 **Issues GitHub** : https://github.com/vendorname/nativephp-offline-sync/issues
+- 📧 **Email** : support@techparse.fr
+- 📖 **Documentation** : https://docs.techparse.fr
+- 🐛 **Issues GitHub** : https://github.com/Kromaric/offline-sync/issues
 
 ### Temps de réponse
 

@@ -680,8 +680,8 @@ return [
 
 ## 📞 Support
 
-- 📧 Email : support@vendorname.com
-- 📖 Documentation : https://docs.vendorname.com/offline-sync
+- 📧 Email : support@techparse.fr
+- 📖 Documentation : https://docs.techparse.fr/offline-sync
 
 ---
 

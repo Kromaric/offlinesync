@@ -1,6 +1,6 @@
 # NativePHP Offline Sync & Backup
 
-[![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![PHP Version](https://img.shields.io/badge/php-%5E8.1-blue.svg)](https://php.net)
 [![Laravel Version](https://img.shields.io/badge/laravel-%5E10.0%7C%5E11.0-orange.svg)](https://laravel.com)
 [![NativePHP Version](https://img.shields.io/badge/nativephp-%5E0.8.0-purple.svg)](https://nativephp.com)
@@ -39,13 +39,13 @@ Stop fighting with offline data. This plugin handles queuing, sync, and conflict
 ### 1. Install via Composer
 
 ```bash
-composer require vendor-name/nativephp-offline-sync
+composer require techparse/offline-sync
 ```
 
 ### 2. Register the Plugin
 
 ```bash
-php artisan native:plugin:register vendor-name/nativephp-offline-sync
+php artisan native:plugin:register techparse/offline-sync
 ```
 
 ### 3. Publish Configuration
@@ -76,7 +76,7 @@ SYNC_API_TOKEN=your-secure-token
 ### 1. Add Syncable Trait to Your Models
 
 ```php
-use VendorName\OfflineSync\Traits\Syncable;
+use Techparse\OfflineSync\Traits\Syncable;
 
 class Task extends Model
 {
@@ -106,7 +106,7 @@ Edit `config/offline-sync.php`:
 $task = Task::create(['title' => 'My Task']);
 
 // Manual sync (optional)
-use VendorName\OfflineSync\Facades\OfflineSync;
+use Techparse\OfflineSync\Facades\OfflineSync;
 
 OfflineSync::sync(['tasks']);
 
@@ -133,7 +133,7 @@ $task->delete();
 ### Manual Syncing
 
 ```php
-use VendorName\OfflineSync\Facades\OfflineSync;
+use Techparse\OfflineSync\Facades\OfflineSync;
 
 // Bidirectional sync (push + pull)
 OfflineSync::sync(['tasks', 'users']);
@@ -244,7 +244,7 @@ SYNC_REQUIRE_HTTPS=true
 Add to `routes/api.php`:
 
 ```php
-use VendorName\OfflineSync\Http\Controllers\SyncController;
+use Techparse\OfflineSync\Http\Controllers\SyncController;
 
 Route::middleware('auth:sanctum')->prefix('sync')->group(function () {
     Route::post('/push', [SyncController::class, 'push']);
@@ -265,7 +265,7 @@ Use the included `SyncController` or extend it for custom logic.
 Listen to sync events in your application:
 
 ```php
-use VendorName\OfflineSync\Events\SyncCompleted;
+use Techparse\OfflineSync\Events\SyncCompleted;
 
 Event::listen(SyncCompleted::class, function ($event) {
     Log::info("Synced {$event->synced} items in {$event->durationMs}ms");
@@ -346,20 +346,16 @@ composer test-coverage
 
 ## 🤝 Support
 
-- **Email**: support@vendorname.com
-- **Documentation**: https://docs.vendorname.com/offline-sync
-- **Issues**: https://github.com/vendorname/nativephp-offline-sync/issues
+- **Email**: support@techparse.fr
+- **Documentation**: https://docs.techparse.fr/offline-sync
+- **Issues**: https://github.com/Kromaric/offline-sync/issues
 
 ---
 
 ## 📄 License
 
-This is proprietary commercial software. See [LICENSE](LICENSE) for details.
+This software is open source, released under the MIT License. See [LICENSE](LICENSE) for details.
 
-**Single License: €149**
-- Unlimited use on your projects
-- 12 months of updates
-- 6 months of email support
 
 ---
 
@@ -378,4 +374,4 @@ See [CHANGELOG.md](dev/CHANGELOG.md) for version history.
 
 ---
 
-**Made by VendorName** | [Website](https://vendorname.com) | [Twitter](https://twitter.com/vendorname)
+**Made by Techparse** | [Website](https://techparse.fr) | [Twitter](https://twitter.com/techparse)
