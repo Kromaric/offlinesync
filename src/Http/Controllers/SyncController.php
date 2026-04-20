@@ -16,7 +16,7 @@ class SyncController
     }
 
     /**
-     * Push : recevoir les changements du client
+     * Push: receive changes from the client
      */
     public function push(Request $request)
     {
@@ -74,7 +74,7 @@ class SyncController
     }
 
     /**
-     * Pull : envoyer les changements au client
+     * Pull: send changes to the client
      */
     public function pull(Request $request, string $resource)
     {
@@ -86,7 +86,7 @@ class SyncController
         $since = $validated['since'] ?? now()->subDays(30);
         $limit = $validated['limit'] ?? 100;
 
-        // Déterminer la classe du modèle
+        // Determine the model class
         $modelClass = $this->getModelClass($resource);
         
         if (!$modelClass) {
@@ -113,7 +113,7 @@ class SyncController
     }
 
     /**
-     * Status : info sur l'état du serveur
+     * Status: information about the server state
      */
     public function status(Request $request)
     {
@@ -124,7 +124,7 @@ class SyncController
     }
 
     /**
-     * Ping : vérifier la connexion
+     * Ping: check the connection
      */
     public function ping()
     {
@@ -132,7 +132,7 @@ class SyncController
     }
 
     /**
-     * Appliquer un changement individuel
+     * Apply an individual change
      */
     protected function applyChange(array $item): array
     {
@@ -144,7 +144,7 @@ class SyncController
 
         $clientTimestamp = \Carbon\Carbon::parse($item['timestamp']);
 
-        // Vérifier conflit pour update/delete
+        // Check for conflict on update/delete
         if (in_array($item['operation'], ['update', 'delete']) && $item['resource_id']) {
             $existing = $modelClass::find($item['resource_id']);
             
@@ -162,7 +162,7 @@ class SyncController
             }
         }
 
-        // Appliquer l'opération
+        // Apply the operation
         match($item['operation']) {
             'create' => $modelClass::create($item['data']),
             'update' => $modelClass::updateOrCreate(
@@ -176,7 +176,7 @@ class SyncController
     }
 
     /**
-     * Obtenir la classe du modèle depuis le nom de ressource
+     * Get the model class from the resource name
      */
     protected function getModelClass(string $resource): ?string
     {
@@ -185,7 +185,7 @@ class SyncController
     }
 
     /**
-     * Liste des ressources disponibles
+     * List of available resources
      */
     protected function getAvailableResources(): array
     {

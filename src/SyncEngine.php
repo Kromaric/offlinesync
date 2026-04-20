@@ -24,7 +24,7 @@ class SyncEngine
     }
 
     /**
-     * Synchronisation bidirectionnelle
+     * Bidirectional synchronization
      */
     public function sync(?array $resources = null): array
     {
@@ -59,7 +59,7 @@ class SyncEngine
     }
 
     /**
-     * Push : envoyer les changements locaux vers le serveur
+     * Push: send local changes to the server
      */
     public function push(?array $resources = null): array
     {
@@ -106,7 +106,7 @@ class SyncEngine
                         $conflicts = array_merge($conflicts, $result['conflicts']);
                     }
 
-                    // Marquer les items comme synchronisés
+                    // Mark items as synced
                     foreach ($batch as $item) {
                         $item->markAsSynced();
                         event(new ItemSynced($item));
@@ -133,7 +133,7 @@ class SyncEngine
     }
 
     /**
-     * Pull : récupérer les changements du serveur
+     * Pull: retrieve changes from the server
      */
     public function pull(array $resources): array
     {
@@ -171,7 +171,7 @@ class SyncEngine
     }
 
     /**
-     * Obtenir le statut de synchronisation
+     * Get the synchronization status
      */
     public function getStatus(): array
     {
@@ -189,7 +189,7 @@ class SyncEngine
     }
 
     /**
-     * Appliquer un changement distant localement
+     * Apply a remote change locally
      */
     protected function applyRemoteChange(string $resource, array $item): void
     {
@@ -200,7 +200,7 @@ class SyncEngine
 
         $model = new $modelClass;
         
-        // Marquer comme venant de la sync pour éviter les boucles
+        // Mark as coming from sync to avoid loops
         if (method_exists($model, 'markAsFromSync')) {
             $model->markAsFromSync();
         }
@@ -216,7 +216,7 @@ class SyncEngine
     }
 
     /**
-     * Logger une synchronisation
+     * Log a synchronization
      */
     protected function logSync(string $direction, array $result, int $durationMs): void
     {
@@ -237,7 +237,7 @@ class SyncEngine
     }
 
     /**
-     * Obtenir les headers d'authentification
+     * Get authentication headers
      */
     protected function getAuthHeaders(): array
     {
@@ -251,7 +251,7 @@ class SyncEngine
     }
 
     /**
-     * Auth Bearer Token
+     * Bearer Token authentication
      */
     protected function getBearerAuth(): array
     {
@@ -264,7 +264,7 @@ class SyncEngine
     }
 
     /**
-     * Auth API Key
+     * API Key authentication
      */
     protected function getApiKeyAuth(): array
     {
@@ -275,7 +275,7 @@ class SyncEngine
     }
 
     /**
-     * Récupérer le token stocké
+     * Retrieve the stored token
      */
     protected function getStoredToken(): ?string
     {
@@ -293,7 +293,7 @@ class SyncEngine
     }
 
     /**
-     * Faire une requête HTTP sécurisée
+     * Make a secure HTTP request
      */
     protected function secureRequest(string $method, string $url, array $data = []): \Illuminate\Http\Client\Response
     {
@@ -307,7 +307,7 @@ class SyncEngine
     }
 
     /**
-     * Obtenir l'URL de l'API
+     * Get the API URL
      */
     protected function getApiUrl(string $path): string
     {
@@ -315,7 +315,7 @@ class SyncEngine
     }
 
     /**
-     * Obtenir la classe du modèle
+     * Get the model class
      */
     protected function getModelClass(string $resource): ?string
     {
@@ -324,7 +324,7 @@ class SyncEngine
     }
 
     /**
-     * Obtenir le timestamp du dernier pull
+     * Get the timestamp of the last pull
      */
     protected function getLastPullTimestamp(string $resource): string
     {
@@ -337,7 +337,7 @@ class SyncEngine
     }
 
     /**
-     * Mettre à jour le timestamp du dernier pull
+     * Update the timestamp of the last pull
      */
     protected function updateLastPullTimestamp(string $resource): void
     {
