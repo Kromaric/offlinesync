@@ -11,31 +11,31 @@ return new class extends Migration
         Schema::create('offline_sync_queue', function (Blueprint $table) {
             $table->id();
             
-            // Identification de la ressource
+            // Resource identification
             $table->string('resource');
             $table->string('resource_id')->nullable();
-            
-            // Type d'opération
+
+            // Operation type
             $table->enum('operation', ['create', 'update', 'delete']);
-            
-            // Données
+
+            // Data
             $table->json('payload');
             $table->string('hash')->unique();
-            
-            // Statut
+
+            // Status
             $table->enum('status', ['pending', 'syncing', 'synced', 'failed'])
                   ->default('pending');
             $table->integer('retry_count')->default(0);
-            
+
             // Timestamps
             $table->timestamp('created_at');
             $table->timestamp('synced_at')->nullable();
-            
-            // Erreurs
+
+            // Errors
             $table->text('error_message')->nullable();
             $table->json('error_details')->nullable();
-            
-            // Index pour performances
+
+            // Performance indexes
             $table->index(['status', 'created_at']);
             $table->index(['resource', 'status']);
             $table->index('synced_at');

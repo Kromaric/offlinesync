@@ -14,12 +14,12 @@ class ConflictResolver
     {
         $this->defaultStrategy = config('offline-sync.conflict_resolution.default_strategy', 'server_wins');
         
-        // Charger les stratégies par ressource
+        // Load strategies per resource
         $this->strategies = config('offline-sync.conflict_resolution.per_resource', []);
     }
 
     /**
-     * Résoudre un conflit
+     * Resolve a conflict
      */
     public function resolve(array $conflict): array
     {
@@ -32,7 +32,7 @@ class ConflictResolver
     }
 
     /**
-     * Obtenir une instance de stratégie
+     * Get a strategy instance
      */
     protected function getStrategy(string $name): SyncStrategy
     {

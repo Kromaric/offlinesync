@@ -1,15 +1,32 @@
+# Plugin (library — do NOT commit composer.lock)
 /vendor/
-/.idea/
-/.vscode/
-/node_modules/
 composer.lock
 .phpunit.result.cache
+.phpunit.cache
+
+# Demo app (application — composer.lock IS committed)
+demo/vendor/
+demo/.env
+demo/.env.backup
+demo/.env.production
+demo/storage/framework/cache/
+demo/storage/framework/sessions/
+demo/storage/framework/views/
+demo/storage/logs/
+demo/bootstrap/cache/
+demo/public/build/
+demo/public/hot
+demo/public/storage
+
+# IDE & OS
+/.idea/
+/.vscode/
+/.fleet/
+/.nova/
+/.zed/
+/node_modules/
 .DS_Store
 Thumbs.db
 *.swp
 *.swo
 *~
-.env
-.env.backup
-.phpunit.cache
-/dev/

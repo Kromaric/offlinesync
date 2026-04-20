@@ -10,11 +10,11 @@ class ConnectivityService
     protected ?int $lastCheckTimestamp = null;
 
     /**
-     * Vérifier si l'app est online
+     * Check if the app is online
      */
     public function isOnline(): bool
     {
-        // Cache de 5 secondes
+        // 5-second cache
         if ($this->lastCheckTimestamp && (time() - $this->lastCheckTimestamp) < 5) {
             return $this->isOnline;
         }
@@ -26,7 +26,7 @@ class ConnectivityService
     }
 
     /**
-     * Ping le serveur
+     * Ping the server
      */
     protected function checkConnection(): bool
     {
@@ -42,7 +42,7 @@ class ConnectivityService
     }
 
     /**
-     * Attendre la connexion (avec timeout)
+     * Wait for connection (with timeout)
      */
     public function waitForConnection(int $timeoutSeconds = 30): bool
     {

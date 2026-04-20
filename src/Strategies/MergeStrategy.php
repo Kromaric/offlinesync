@@ -11,7 +11,7 @@ class MergeStrategy implements SyncStrategy
         $local = $conflict['local_data'];
         $remote = $conflict['remote_data'];
 
-        // Merge intelligent : prendre les valeurs non-nulles de chaque côté
+        // Smart merge: take non-null values from each side
         $merged = array_merge($remote, array_filter($local, fn($v) => $v !== null));
 
         return [

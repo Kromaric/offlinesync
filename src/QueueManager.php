@@ -10,7 +10,7 @@ use Techparse\OfflineSync\Events\QueuePurged;
 class QueueManager
 {
     /**
-     * Ajouter un item à la queue
+     * Add an item to the queue
      */
     public function queue(Model $model, string $operation): SyncQueueItem
     {
@@ -36,7 +36,7 @@ class QueueManager
     }
 
     /**
-     * Récupérer les items en attente
+     * Retrieve pending items
      */
     public function getPending(?string $resource = null): \Illuminate\Support\Collection
     {
@@ -50,7 +50,7 @@ class QueueManager
     }
 
     /**
-     * Purger les items synchronisés anciens
+     * Purge old synced items
      */
     public function purgeOldItems(int $days = 7): int
     {
@@ -66,7 +66,7 @@ class QueueManager
     }
 
     /**
-     * Sérialiser un modèle pour la sync
+     * Serialize a model for sync
      */
     protected function serializeModel(Model $model, string $operation): array
     {
@@ -77,12 +77,12 @@ class QueueManager
             ];
         }
 
-        // Récupérer les attributs
-        $data = $operation === 'create' 
+        // Retrieve the attributes
+        $data = $operation === 'create'
             ? $model->getAttributes()
             : $model->getDirty();
 
-        // Exclure certains champs
+        // Exclude certain fields
         $excluded = array_merge(
             ['fromSync'],
             method_exists($model, 'getSyncExcluded') ? $model->getSyncExcluded() : []
@@ -90,7 +90,7 @@ class QueueManager
 
         $data = array_diff_key($data, array_flip($excluded));
 
-        // Ajouter les timestamps
+        // Add timestamps
         if (isset($model->updated_at)) {
             $data['updated_at'] = $model->updated_at->toIso8601String();
         }
@@ -102,7 +102,7 @@ class QueueManager
     }
 
     /**
-     * Générer un hash unique
+     * Generate a unique hash
      */
     protected function generateHash(string $resource, $id, string $operation, array $payload): string
     {

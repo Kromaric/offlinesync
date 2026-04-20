@@ -7,30 +7,30 @@ use Techparse\OfflineSync\Facades\OfflineSync;
 trait Syncable
 {
     /**
-     * Flag pour éviter les boucles de sync
+     * Flag to prevent sync loops
      */
     protected bool $fromSync = false;
 
     /**
-     * Boot du trait
+     * Boot the trait
      */
     protected static function bootSyncable(): void
     {
-        // Intercepter les créations
+        // Intercept creations
         static::created(function ($model) {
             if (!$model->isFromSync()) {
                 OfflineSync::queue($model, 'create');
             }
         });
 
-        // Intercepter les mises à jour
+        // Intercept updates
         static::updated(function ($model) {
             if (!$model->isFromSync() && $model->wasChanged()) {
                 OfflineSync::queue($model, 'update');
             }
         });
 
-        // Intercepter les suppressions
+        // Intercept deletions
         static::deleted(function ($model) {
             if (!$model->isFromSync()) {
                 OfflineSync::queue($model, 'delete');
@@ -39,7 +39,7 @@ trait Syncable
     }
 
     /**
-     * Flag pour éviter les boucles de sync
+     * Flag to prevent sync loops
      */
     public function isFromSync(): bool
     {
@@ -47,7 +47,7 @@ trait Syncable
     }
 
     /**
-     * Marquer le modèle comme venant d'une sync
+     * Mark the model as coming from a sync
      */
     public function markAsFromSync(): self
     {
@@ -56,7 +56,7 @@ trait Syncable
     }
 
     /**
-     * Nom de la ressource pour la sync
+     * Resource name for sync
      */
     public function getSyncResourceName(): string
     {
@@ -64,7 +64,7 @@ trait Syncable
     }
 
     /**
-     * Champs à exclure de la sync
+     * Fields to exclude from sync
      */
     public function getSyncExcluded(): array
     {
