@@ -7,32 +7,24 @@ use Techparse\OfflineSync\Events\ConflictDetected;
 
 class ConflictResolver
 {
-    protected array $strategies = [];
-    protected string $defaultStrategy;
-
-    public function __construct()
-    {
-        $this->defaultStrategy = config('offline-sync.conflict_resolution.default_strategy', 'server_wins');
-        
-        // Charger les stratégies par ressource
-        $this->strategies = config('offline-sync.conflict_resolution.per_resource', []);
-    }
-
     /**
-     * Résoudre un conflit
+     * Resolve a conflict
      */
     public function resolve(array $conflict): array
     {
         event(new ConflictDetected($conflict));
 
-        $strategyName = $this->strategies[$conflict['resource']] ?? $this->defaultStrategy;
-        $strategy = $this->getStrategy($strategyName);
+        // Read config at resolve-time so runtime config() changes are picked up
+        $perResource  = config('offline-sync.conflict_resolution.per_resource', []);
+        $default      = config('offline-sync.conflict_resolution.default_strategy', 'server_wins');
+        $strategyName = $perResource[$conflict['resource'] ?? ''] ?? $default;
+        $strategy     = $this->getStrategy($strategyName);
 
         return $strategy->resolve($conflict);
     }
 
     /**
-     * Obtenir une instance de stratégie
+     * Get a strategy instance
      */
     protected function getStrategy(string $name): SyncStrategy
     {

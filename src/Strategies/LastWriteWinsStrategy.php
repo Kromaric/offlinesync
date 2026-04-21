@@ -12,7 +12,7 @@ class LastWriteWinsStrategy implements SyncStrategy
         $localTime = Carbon::parse($conflict['local_timestamp']);
         $remoteTime = Carbon::parse($conflict['remote_timestamp']);
 
-        if ($remoteTime->greaterThan($localTime)) {
+        if ($remoteTime->greaterThanOrEqualTo($localTime)) {
             return [
                 'data' => $conflict['remote_data'],
                 'winner' => 'server',

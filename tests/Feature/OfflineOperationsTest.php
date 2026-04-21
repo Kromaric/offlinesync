@@ -266,25 +266,21 @@ class OfflineOperationsTest extends TestCase
     }
 
     /**
-     * Create a mock model for testing
+     * Create a mock model for testing.
+     *
+     * Timestamps are included via getAttributes() so no magic property
+     * assignment is needed (which would trigger Eloquent's setAttribute()).
      */
     protected function createMockModel(array $attributes, array $dirty = []): Model
     {
         $model = \Mockery::mock(Model::class);
-        
+
         $model->shouldReceive('getSyncResourceName')->andReturn('tasks');
         $model->shouldReceive('getKey')->andReturn($attributes['id'] ?? 1);
         $model->shouldReceive('getAttributes')->andReturn($attributes);
         $model->shouldReceive('getDirty')->andReturn($dirty ?: $attributes);
-        $model->shouldReceive('getSyncExcluded')->andReturn([]);
-        
-        // Mock timestamps
-        if (isset($attributes['created_at'])) {
-            $model->created_at = $attributes['created_at'];
-        }
-        if (isset($attributes['updated_at'])) {
-            $model->updated_at = $attributes['updated_at'];
-        }
+        // byDefault() lets individual tests override this expectation
+        $model->shouldReceive('getSyncExcluded')->andReturn([])->byDefault();
 
         return $model;
     }

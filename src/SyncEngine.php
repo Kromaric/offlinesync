@@ -13,14 +13,18 @@ use Techparse\OfflineSync\Models\SyncLog;
 class SyncEngine
 {
     protected ConflictResolver $conflictResolver;
-    protected ConnectivityService $connectivity;
 
-    public function __construct(
-        ConflictResolver $conflictResolver,
-        ConnectivityService $connectivity
-    ) {
+    public function __construct(ConflictResolver $conflictResolver)
+    {
         $this->conflictResolver = $conflictResolver;
-        $this->connectivity = $connectivity;
+    }
+
+    /**
+     * Resolve ConnectivityService from the container so test mocks are honoured.
+     */
+    protected function connectivity(): ConnectivityService
+    {
+        return app(ConnectivityService::class);
     }
 
     /**
@@ -59,13 +63,26 @@ class SyncEngine
     }
 
     /**
-     * Push : envoyer les changements locaux vers le serveur
+     * Validate that the configured API URL uses HTTPS when required.
+     */
+    protected function validateApiUrlSecurity(): void
+    {
+        $apiUrl = config('offline-sync.api_url', '');
+        if (config('offline-sync.security.require_https', true) && !str_starts_with($apiUrl, 'https://')) {
+            throw new \Exception('HTTPS is required for sync operations');
+        }
+    }
+
+    /**
+     * Push: send local changes to the server
      */
     public function push(?array $resources = null): array
     {
-        if (!$this->connectivity->isOnline()) {
+        if (!$this->connectivity()->isOnline()) {
             throw new \Exception('No internet connection');
         }
+
+        $this->validateApiUrlSecurity();
 
         $queueManager = app(QueueManager::class);
         $pending = $resources 
@@ -137,7 +154,7 @@ class SyncEngine
      */
     public function pull(array $resources): array
     {
-        if (!$this->connectivity->isOnline()) {
+        if (!$this->connectivity()->isOnline()) {
             throw new \Exception('No internet connection');
         }
 
@@ -184,7 +201,7 @@ class SyncEngine
             'pending_count' => $pending->count(),
             'last_sync' => $lastSync?->synced_at?->toIso8601String(),
             'is_syncing' => false, // TODO: implement sync lock
-            'is_online' => $this->connectivity->isOnline(),
+            'is_online' => $this->connectivity()->isOnline(),
         ];
     }
 
