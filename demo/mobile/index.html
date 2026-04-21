@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>offlineSync — Client de test</title>
+    <title>offlineSync — Test Client</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -381,33 +381,33 @@
 </head>
 <body>
 
-<!-- ══ Écran de connexion ══════════════════════════════════════════════════════ -->
+<!-- ══ Login screen ═══════════════════════════════════════════════════════════ -->
 <div id="loginScreen" style="display:none">
     <div class="login-card">
         <h1>offline<span>Sync</span></h1>
-        <p>Client de test NativePHP</p>
+        <p>NativePHP test client</p>
         <form id="loginForm">
             <div class="form-group">
                 <label>Email</label>
                 <input type="email" id="loginEmail" value="test@example.com" required>
             </div>
             <div class="form-group">
-                <label>Mot de passe</label>
+                <label>Password</label>
                 <input type="password" id="loginPassword" value="password" required>
             </div>
             <button type="submit" class="btn btn-primary" style="width:100%;padding:11px">
-                Se connecter
+                Log in
             </button>
             <div class="login-error" id="loginError"></div>
         </form>
         <div class="hint">
-            Compte de démo :<br>
+            Demo account:<br>
             <strong>test@example.com</strong> / <strong>password</strong>
         </div>
     </div>
 </div>
 
-<!-- ══ App principale ═════════════════════════════════════════════════════════ -->
+<!-- ══ Main app ════════════════════════════════════════════════════════════════ -->
 <div id="appScreen" style="display:none">
     <div class="app-layout">
 
@@ -422,13 +422,13 @@
                 📦 <span id="pendingCount">0</span>
             </div>
             <div class="topbar-actions">
-                <button class="btn btn-warning" id="toggleOfflineBtn">⚡ Simuler OFFLINE</button>
-                <button class="btn btn-primary" id="syncBtn">🔄 Synchroniser</button>
-                <button class="btn btn-outline" id="logoutBtn">Déconnexion</button>
+                <button class="btn btn-warning" id="toggleOfflineBtn">⚡ Simulate OFFLINE</button>
+                <button class="btn btn-primary" id="syncBtn">🔄 Sync</button>
+                <button class="btn btn-outline" id="logoutBtn">Log out</button>
             </div>
         </header>
 
-        <!-- Zone principale -->
+        <!-- Main area -->
         <main class="main-area">
             <!-- Stats -->
             <div class="stats">
@@ -438,82 +438,82 @@
                 </div>
                 <div class="stat">
                     <div class="stat-number" id="completedCount">0</div>
-                    <div class="stat-label">Complétées</div>
+                    <div class="stat-label">Completed</div>
                 </div>
                 <div class="stat">
                     <div class="stat-number" id="pendingTasksCount">0</div>
-                    <div class="stat-label">En cours</div>
+                    <div class="stat-label">In progress</div>
                 </div>
             </div>
 
-            <!-- Formulaire d'ajout -->
+            <!-- Add task form -->
             <div class="card">
-                <h2>➕ Nouvelle tâche</h2>
+                <h2>➕ New task</h2>
                 <form id="addTaskForm">
                     <div class="form-group">
-                        <label>Titre *</label>
-                        <input type="text" id="title" required placeholder="Titre de la tâche…">
+                        <label>Title *</label>
+                        <input type="text" id="title" required placeholder="Task title…">
                     </div>
                     <div class="form-group">
                         <label>Description</label>
-                        <textarea id="description" placeholder="Détails (optionnel)…"></textarea>
+                        <textarea id="description" placeholder="Details (optional)…"></textarea>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Priorité</label>
+                            <label>Priority</label>
                             <select id="priority">
-                                <option value="low">🟢 Basse</option>
-                                <option value="medium" selected>🟠 Moyenne</option>
-                                <option value="high">🔴 Haute</option>
+                                <option value="low">🟢 Low</option>
+                                <option value="medium" selected>🟠 Medium</option>
+                                <option value="high">🔴 High</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Échéance</label>
+                            <label>Due date</label>
                             <input type="datetime-local" id="dueDate">
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary" style="width:100%;padding:10px">
-                        Ajouter la tâche
+                        Add task
                     </button>
                 </form>
             </div>
 
-            <!-- Liste des tâches -->
+            <!-- Task list -->
             <div class="card">
                 <div class="tasks-header">
-                    <h2>Mes tâches</h2>
+                    <h2>My tasks</h2>
                 </div>
                 <div id="tasksList"></div>
             </div>
         </main>
 
-        <!-- Sidebar : Queue + Conflits + Log -->
+        <!-- Sidebar: Queue + Conflicts + Log -->
         <aside class="sidebar">
 
-            <!-- Queue locale -->
+            <!-- Local queue -->
             <div class="sidebar-section">
                 <div class="sidebar-title">
-                    Queue locale (offlineSync)
+                    Local queue (offlineSync)
                     <span class="sidebar-badge" id="queueCount">0</span>
                 </div>
-                <div id="queueList"><div class="queue-empty">Queue vide ✓</div></div>
+                <div id="queueList"><div class="queue-empty">Queue empty ✓</div></div>
                 <div style="margin-top:8px">
                     <button class="btn btn-danger" id="clearQueueBtn" style="font-size:0.75rem;padding:5px 10px;width:auto">
-                        Vider la queue
+                        Clear queue
                     </button>
                 </div>
             </div>
 
-            <!-- Conflits -->
+            <!-- Conflicts -->
             <div class="sidebar-section">
-                <div class="sidebar-title">Conflits détectés</div>
-                <div id="conflictList"><div class="queue-empty">Aucun conflit</div></div>
+                <div class="sidebar-title">Detected conflicts</div>
+                <div id="conflictList"><div class="queue-empty">No conflicts</div></div>
             </div>
 
-            <!-- Log de sync -->
+            <!-- Sync log -->
             <div class="sidebar-section" style="flex:1">
-                <div class="sidebar-title">Journal de sync</div>
-                <div id="syncLog"><div class="queue-empty">Aucun événement</div></div>
+                <div class="sidebar-title">Sync log</div>
+                <div id="syncLog"><div class="queue-empty">No events</div></div>
             </div>
 
         </aside>

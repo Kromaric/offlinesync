@@ -3,10 +3,10 @@ const API_URL = window.location.origin;
 const TOKEN_KEY   = 'offlinesync_token';
 const QUEUE_KEY   = 'offlinesync_queue';
 
-// ─── État global ──────────────────────────────────────────────────────────────
+// ─── Global state ─────────────────────────────────────────────────────────────
 let tasks       = [];
 let authToken   = localStorage.getItem(TOKEN_KEY);
-let offlineMode = false;   // toggle manuel pour simuler le mode hors ligne
+let offlineMode = false;   // manual toggle to simulate offline mode
 let syncLog     = [];
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ async function handleLogin(e) {
         localStorage.setItem(TOKEN_KEY, authToken);
         await boot();
     } catch (err) {
-        errEl.textContent = 'Identifiants incorrects.';
+        errEl.textContent = 'Invalid credentials.';
     }
 }
 
@@ -91,10 +91,10 @@ function enqueue(resource, resourceId, operation, data) {
 }
 
 function clearQueue() {
-    if (!confirm('Vider la queue locale ? Les changements non synchronisés seront perdus.')) return;
+    if (!confirm('Clear local queue? Unsynced changes will be lost.')) return;
     saveQueue([]);
     renderQueue();
-    addLog('Queue vidée manuellement', 'info');
+    addLog('Queue cleared manually', 'info');
 }
 
 // ─── Fetch helper ─────────────────────────────────────────────────────────────
@@ -118,20 +118,20 @@ async function apiFetch(path, method = 'GET', body = null, auth = true) {
     return res.json();
 }
 
-// ─── Tâches ──────────────────────────────────────────────────────────────────
+// ─── Tasks ────────────────────────────────────────────────────────────────────
 async function loadTasks() {
     try {
         const data = await apiFetch('/api/tasks');
         tasks = data.data;
         renderTasks();
         updateStats(data.meta);
-        addLog(`↓ Pull: ${tasks.length} tâche(s) chargée(s)`, 'success');
+        addLog(`↓ Pull: ${tasks.length} task(s) loaded`, 'success');
     } catch (err) {
         if (offlineMode || !navigator.onLine) {
-            addLog('Mode offline – tâches depuis le cache local', 'warning');
+            addLog('Offline mode – tasks from local cache', 'warning');
             renderTasks();
         } else {
-            showNotification('Erreur de chargement', 'error');
+            showNotification('Load error', 'error');
         }
     }
 }
@@ -149,10 +149,10 @@ async function handleAddTask(e) {
     try {
         const data = await apiFetch('/api/tasks', 'POST', payload);
         tasks.unshift(data.data);
-        showNotification('Tâche créée et synchronisée ✓', 'success');
-        addLog(`✓ Create task "${payload.title}" → serveur`, 'success');
+        showNotification('Task created and synced ✓', 'success');
+        addLog(`✓ Create task "${payload.title}" → server`, 'success');
     } catch (err) {
-        // Mode offline : queue locale
+        // Offline mode: local queue
         const tempTask = {
             id:         `temp_${Date.now()}`,
             ...payload,
@@ -163,7 +163,7 @@ async function handleAddTask(e) {
         };
         tasks.unshift(tempTask);
         enqueue('tasks', null, 'create', payload);
-        showNotification('Tâche enregistrée localement (sync en attente)', 'warning');
+        showNotification('Task saved locally (sync pending)', 'warning');
     }
 
     document.getElementById('addTaskForm').reset();
@@ -182,16 +182,16 @@ async function toggleTaskComplete(taskId) {
     try {
         await apiFetch(`/api/tasks/${taskId}/toggle`, 'POST');
         addLog(`✓ Toggle task ${taskId} → ${newState ? 'done' : 'pending'}`, 'success');
-        showNotification(newState ? 'Tâche complétée ✓' : 'Tâche réactivée', 'success');
+        showNotification(newState ? 'Task completed ✓' : 'Task reopened', 'success');
     } catch {
         enqueue('tasks', String(taskId), 'update', { completed: newState });
-        showNotification('Modification mise en queue (offline)', 'warning');
+        showNotification('Change queued (offline)', 'warning');
     }
     updateStats();
 }
 
 async function deleteTask(taskId) {
-    if (!confirm('Supprimer cette tâche ?')) return;
+    if (!confirm('Delete this task?')) return;
 
     tasks = tasks.filter(t => t.id != taskId);
     renderTasks();
@@ -199,33 +199,33 @@ async function deleteTask(taskId) {
 
     try {
         await apiFetch(`/api/tasks/${taskId}`, 'DELETE');
-        addLog(`✓ Delete task ${taskId} → serveur`, 'success');
-        showNotification('Tâche supprimée', 'success');
+        addLog(`✓ Delete task ${taskId} → server`, 'success');
+        showNotification('Task deleted', 'success');
     } catch {
         enqueue('tasks', String(taskId), 'delete', { id: taskId });
-        showNotification('Suppression mise en queue (offline)', 'warning');
+        showNotification('Delete queued (offline)', 'warning');
     }
 }
 
-// ─── Synchronisation complète ─────────────────────────────────────────────────
+// ─── Full sync ────────────────────────────────────────────────────────────────
 async function runFullSync() {
     const btn = document.getElementById('syncBtn');
     btn.disabled = true;
-    btn.textContent = '⏳ Sync...';
+    btn.textContent = '⏳ Syncing...';
     document.getElementById('statusDot').classList.add('syncing');
 
     try {
         await pushQueue();
         await loadTasks();
         document.getElementById('pendingCount').textContent = getQueue().length;
-        showNotification('Synchronisation complète ✓', 'success');
-        addLog('─── Sync complète ───', 'info');
+        showNotification('Sync complete ✓', 'success');
+        addLog('─── Sync complete ───', 'info');
     } catch (err) {
-        showNotification('Sync échouée – mode offline ?', 'error');
-        addLog(`✗ Sync échouée: ${err.message}`, 'error');
+        showNotification('Sync failed – offline mode?', 'error');
+        addLog(`✗ Sync failed: ${err.message}`, 'error');
     } finally {
         btn.disabled = false;
-        btn.textContent = '🔄 Synchroniser';
+        btn.textContent = '🔄 Sync';
         document.getElementById('statusDot').classList.remove('syncing');
     }
 }
@@ -233,13 +233,13 @@ async function runFullSync() {
 async function pushQueue() {
     const q = getQueue();
     if (q.length === 0) {
-        addLog('↑ Push: queue vide, rien à envoyer', 'info');
+        addLog('↑ Push: queue empty, nothing to send', 'info');
         return;
     }
 
-    addLog(`↑ Push: envoi de ${q.length} item(s)...`, 'info');
+    addLog(`↑ Push: sending ${q.length} item(s)...`, 'info');
 
-    // Formatter pour l'API
+    // Format for API
     const items = q.map(item => ({
         resource:    item.resource,
         resource_id: item.resource_id,
@@ -250,41 +250,41 @@ async function pushQueue() {
 
     const result = await apiFetch('/api/sync/push', 'POST', { items });
 
-    addLog(`↑ Push résultat: synced=${result.synced} failed=${result.failed} conflicts=${result.conflicts.length}`,
+    addLog(`↑ Push result: synced=${result.synced} failed=${result.failed} conflicts=${result.conflicts.length}`,
            result.failed > 0 ? 'error' : 'success');
 
     if (result.conflicts.length > 0) {
         renderConflicts(result.conflicts);
-        showNotification(`${result.conflicts.length} conflit(s) détecté(s)`, 'error');
+        showNotification(`${result.conflicts.length} conflict(s) detected`, 'error');
     }
 
-    // Vider la queue si tout s'est bien passé
+    // Clear queue if everything went well
     if (result.failed === 0) {
         saveQueue([]);
         renderQueue();
-        // Nettoyer les tâches temporaires
+        // Remove temporary tasks
         tasks = tasks.filter(t => !t._pending);
         renderTasks();
     } else {
-        // Garder seulement les items qui ont échoué
-        addLog(`✗ ${result.failed} item(s) non synchronisé(s)`, 'error');
+        // Keep only failed items
+        addLog(`✗ ${result.failed} item(s) failed to sync`, 'error');
     }
 }
 
-// ─── Mode offline ─────────────────────────────────────────────────────────────
+// ─── Offline mode ─────────────────────────────────────────────────────────────
 function toggleOfflineMode() {
     offlineMode = !offlineMode;
     const btn = document.getElementById('toggleOfflineBtn');
     if (offlineMode) {
-        btn.textContent = '✅ Simuler ONLINE';
+        btn.textContent = '✅ Simulate ONLINE';
         btn.style.background = '#e53e3e';
-        showNotification('Mode OFFLINE activé', 'warning');
-        addLog('⚠ Mode offline simulé activé', 'warning');
+        showNotification('OFFLINE mode enabled', 'warning');
+        addLog('⚠ Simulated offline mode enabled', 'warning');
     } else {
-        btn.textContent = '⚡ Simuler OFFLINE';
+        btn.textContent = '⚡ Simulate OFFLINE';
         btn.style.background = '';
-        showNotification('Mode ONLINE rétabli', 'success');
-        addLog('✓ Mode online rétabli', 'success');
+        showNotification('ONLINE mode restored', 'success');
+        addLog('✓ Online mode restored', 'success');
         runFullSync();
     }
     updateConnectivityUI();
@@ -292,8 +292,8 @@ function toggleOfflineMode() {
 
 function startConnectivityMonitoring() {
     setInterval(updateConnectivityUI, 5000);
-    window.addEventListener('online',  () => { updateConnectivityUI(); if (!offlineMode) { showNotification('Connexion rétablie', 'success'); runFullSync(); } });
-    window.addEventListener('offline', () => { updateConnectivityUI(); showNotification('Connexion perdue', 'error'); });
+    window.addEventListener('online',  () => { updateConnectivityUI(); if (!offlineMode) { showNotification('Connection restored', 'success'); runFullSync(); } });
+    window.addEventListener('offline', () => { updateConnectivityUI(); showNotification('Connection lost', 'error'); });
 }
 
 function updateConnectivityUI() {
@@ -301,11 +301,11 @@ function updateConnectivityUI() {
     const dot  = document.getElementById('statusDot');
     const text = document.getElementById('statusText');
     dot.className  = 'status-dot' + (offlineMode ? ' simulated-offline' : isOnline ? '' : ' offline');
-    text.textContent = offlineMode ? '⚡ Offline simulé' : isOnline ? 'Online' : 'Offline';
+    text.textContent = offlineMode ? '⚡ Simulated offline' : isOnline ? 'Online' : 'Offline';
     document.getElementById('pendingCount').textContent = getQueue().length;
 }
 
-// ─── Rendu ────────────────────────────────────────────────────────────────────
+// ─── Render ───────────────────────────────────────────────────────────────────
 function showScreen(name) {
     document.getElementById('loginScreen').style.display = name === 'login' ? 'block' : 'none';
     document.getElementById('appScreen').style.display   = name === 'app'   ? 'block' : 'none';
@@ -314,7 +314,7 @@ function showScreen(name) {
 function renderTasks() {
     const el = document.getElementById('tasksList');
     if (tasks.length === 0) {
-        el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><p>Aucune tâche</p></div>`;
+        el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><p>No tasks</p></div>`;
         return;
     }
     el.innerHTML = tasks.map(task => `
@@ -328,7 +328,7 @@ function renderTasks() {
                         ${ {high:'🔴',medium:'🟠',low:'🟢'}[task.priority] } ${task.priority}
                     </span>
                     ${task.due_date ? `<span class="task-badge ${isOverdue(task) ? 'overdue' : 'due-date'}">${formatDate(task.due_date)}</span>` : ''}
-                    ${task._pending ? '<span class="task-badge pending-badge">⏳ En attente de sync</span>' : ''}
+                    ${task._pending ? '<span class="task-badge pending-badge">⏳ Pending sync</span>' : ''}
                 </div>
             </div>
             <div class="task-actions">
@@ -340,14 +340,14 @@ function renderTasks() {
 
 function updateStats(meta) {
     if (meta) {
-        document.getElementById('totalCount').textContent     = meta.total;
-        document.getElementById('completedCount').textContent = meta.completed;
+        document.getElementById('totalCount').textContent        = meta.total;
+        document.getElementById('completedCount').textContent    = meta.completed;
         document.getElementById('pendingTasksCount').textContent = meta.pending;
     } else {
         const total     = tasks.length;
         const completed = tasks.filter(t => t.completed).length;
-        document.getElementById('totalCount').textContent     = total;
-        document.getElementById('completedCount').textContent = completed;
+        document.getElementById('totalCount').textContent        = total;
+        document.getElementById('completedCount').textContent    = completed;
         document.getElementById('pendingTasksCount').textContent = total - completed;
     }
 }
@@ -355,11 +355,11 @@ function updateStats(meta) {
 function renderQueue() {
     const q  = getQueue();
     const el = document.getElementById('queueList');
-    document.getElementById('queueCount').textContent = q.length;
+    document.getElementById('queueCount').textContent   = q.length;
     document.getElementById('pendingCount').textContent = q.length;
 
     if (q.length === 0) {
-        el.innerHTML = '<div class="queue-empty">Queue vide ✓</div>';
+        el.innerHTML = '<div class="queue-empty">Queue empty ✓</div>';
         return;
     }
     el.innerHTML = q.map(item => `
@@ -375,7 +375,7 @@ function renderQueue() {
 function renderConflicts(conflicts) {
     const el = document.getElementById('conflictList');
     if (!conflicts || conflicts.length === 0) {
-        el.innerHTML = '<div class="queue-empty">Aucun conflit</div>';
+        el.innerHTML = '<div class="queue-empty">No conflicts</div>';
         return;
     }
     el.innerHTML = conflicts.map(c => `
@@ -383,7 +383,7 @@ function renderConflicts(conflicts) {
             <div class="conflict-resource">${c.resource} #${c.resource_id}</div>
             <div class="conflict-detail">
                 <span>Local: ${formatTime(c.local_timestamp)}</span>
-                <span>Serveur: ${formatTime(c.remote_timestamp)}</span>
+                <span>Server: ${formatTime(c.remote_timestamp)}</span>
             </div>
         </div>
     `).join('');
@@ -398,7 +398,7 @@ function addLog(message, type = 'info') {
 function renderSyncLog() {
     const el = document.getElementById('syncLog');
     if (syncLog.length === 0) {
-        el.innerHTML = '<div class="queue-empty">Aucun événement</div>';
+        el.innerHTML = '<div class="queue-empty">No events</div>';
         return;
     }
     el.innerHTML = syncLog.map(entry => `
@@ -418,15 +418,15 @@ function escapeHtml(t) {
 
 function formatDate(d) {
     const diff = Math.floor((new Date(d) - new Date()) / 86400000);
-    if (diff === 0) return 'Aujourd\'hui';
-    if (diff === 1) return 'Demain';
-    if (diff === -1) return 'Hier';
-    if (diff < 0) return `Il y a ${Math.abs(diff)}j`;
-    return `Dans ${diff}j`;
+    if (diff === 0)  return 'Today';
+    if (diff === 1)  return 'Tomorrow';
+    if (diff === -1) return 'Yesterday';
+    if (diff < 0)    return `${Math.abs(diff)}d ago`;
+    return `In ${diff}d`;
 }
 
 function formatTime(iso) {
-    return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 function isOverdue(task) {
