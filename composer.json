@@ -3,13 +3,16 @@
     "description": "Offline-first synchronization plugin for NativePHP Mobile",
     "type": "nativephp-plugin",
     "license": "MIT",
-    "version": "0.1.0-dev",
     "authors": [
         {
             "name": "Kromaric",
             "email": "romaricyt11@gmail.com"
         }
     ],
+    "support": {
+        "source": "https://github.com/Kromaric/offlinesync",
+        "issues": "https://github.com/Kromaric/offlinesync/issues"
+    },
     "require": {
         "php": "^8.1",
         "illuminate/support": "^10.0|^11.0|^12.0",

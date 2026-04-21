@@ -4,6 +4,9 @@ composer.lock
 .phpunit.result.cache
 .phpunit.cache
 
+# Test skeleton — keep the directory but not the generated cache files
+tests/laravel/bootstrap/cache/*.php
+
 # Demo app (application — composer.lock IS committed)
 demo/vendor/
 demo/.env

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>offlineSync — Demo Laravel</title>
+    <title>offlineSync — Laravel Demo</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -107,25 +107,25 @@
         <header>
             <div class="badge">Demo v1.0</div>
             <h1>offline<span>Sync</span></h1>
-            <p>Plugin NativePHP — synchronisation offline-first pour Laravel</p>
+            <p>NativePHP plugin — offline-first synchronization for Laravel</p>
         </header>
 
         <div class="status-bar">
             <div class="status-dot"></div>
             <div class="status-text">
-                Serveur actif — <strong>{{ config('app.url') }}</strong> &nbsp;·&nbsp;
+                Server running — <strong>{{ config('app.url') }}</strong> &nbsp;·&nbsp;
                 Laravel <strong>{{ app()->version() }}</strong> &nbsp;·&nbsp;
                 SQLite &nbsp;·&nbsp;
-                <strong>{{ \App\Models\User::count() }}</strong> utilisateur(s) &nbsp;·&nbsp;
-                <strong>{{ \App\Models\Task::count() }}</strong> tâche(s)
+                <strong>{{ \App\Models\User::count() }}</strong> user(s) &nbsp;·&nbsp;
+                <strong>{{ \App\Models\Task::count() }}</strong> task(s)
             </div>
         </div>
 
         <div class="grid">
             <div class="card">
-                <h2>Client de test (mobile simulé)</h2>
+                <h2>Test client (simulated mobile)</h2>
                 <a href="/mobile" class="cta" target="_blank">
-                    Ouvrir le client Todo
+                    Open Todo client
                 </a>
                 <div class="credentials">
                     <div class="credential-row">
@@ -133,46 +133,46 @@
                         <span class="value">test@example.com</span>
                     </div>
                     <div class="credential-row">
-                        <span class="label">Mot de passe</span>
+                        <span class="label">Password</span>
                         <span class="value">password</span>
                     </div>
                 </div>
             </div>
 
             <div class="card">
-                <h2>Fonctionnalités testées</h2>
+                <h2>Features demonstrated</h2>
                 <ul class="plugin-features">
-                    <li>Trait <code>Syncable</code> sur le modèle <code>Task</code></li>
-                    <li>Queue automatique (create/update/delete)</li>
-                    <li>Sync push <code>POST /api/sync/push</code></li>
-                    <li>Sync pull <code>GET /api/sync/pull/tasks</code></li>
-                    <li>Détection de conflits</li>
-                    <li>Authentification Sanctum (Bearer token)</li>
-                    <li>Commandes Artisan <code>sync:status</code></li>
+                    <li><code>Syncable</code> trait on the <code>Task</code> model</li>
+                    <li>Automatic queue (create / update / delete)</li>
+                    <li>Push sync <code>POST /api/sync/push</code></li>
+                    <li>Pull sync <code>GET /api/sync/pull/tasks</code></li>
+                    <li>Conflict detection</li>
+                    <li>Sanctum authentication (Bearer token)</li>
+                    <li>Artisan command <code>sync:status</code></li>
                 </ul>
             </div>
         </div>
 
         <div class="card">
-            <h2>Routes API disponibles</h2>
+            <h2>Available API routes</h2>
             <ul class="endpoint-list">
                 <li><span class="method post">POST</span><span class="endpoint-path">/api/register</span></li>
                 <li><span class="method post">POST</span><span class="endpoint-path">/api/login</span></li>
-                <li><span class="method get">GET</span><span class="endpoint-path">/api/tasks — liste des tâches (auth requise)</span></li>
-                <li><span class="method post">POST</span><span class="endpoint-path">/api/tasks — créer une tâche → queue Syncable</span></li>
-                <li><span class="method put">PUT</span><span class="endpoint-path">/api/tasks/{id} — modifier → queue Syncable</span></li>
-                <li><span class="method delete">DELETE</span><span class="endpoint-path">/api/tasks/{id} — supprimer → queue Syncable</span></li>
-                <li><span class="method post">POST</span><span class="endpoint-path">/api/sync/push — envoyer changements locaux au serveur</span></li>
-                <li><span class="method get">GET</span><span class="endpoint-path">/api/sync/pull/tasks — récupérer changements serveur</span></li>
-                <li><span class="method get">GET</span><span class="endpoint-path">/api/sync/status — statut du serveur</span></li>
-                <li><span class="method get">GET</span><span class="endpoint-path">/api/sync/ping — test de connectivité</span></li>
+                <li><span class="method get">GET</span><span class="endpoint-path">/api/tasks — list tasks (auth required)</span></li>
+                <li><span class="method post">POST</span><span class="endpoint-path">/api/tasks — create task → Syncable queue</span></li>
+                <li><span class="method put">PUT</span><span class="endpoint-path">/api/tasks/{id} — update → Syncable queue</span></li>
+                <li><span class="method delete">DELETE</span><span class="endpoint-path">/api/tasks/{id} — delete → Syncable queue</span></li>
+                <li><span class="method post">POST</span><span class="endpoint-path">/api/sync/push — push local changes to server</span></li>
+                <li><span class="method get">GET</span><span class="endpoint-path">/api/sync/pull/tasks — fetch server changes</span></li>
+                <li><span class="method get">GET</span><span class="endpoint-path">/api/sync/status — server sync status</span></li>
+                <li><span class="method get">GET</span><span class="endpoint-path">/api/sync/ping — connectivity check</span></li>
             </ul>
         </div>
 
         <div style="text-align:center; margin-top: 32px; color: #475569; font-size: 0.85rem;">
-            Démarrer : <code style="color:#a5f3fc">php artisan serve</code> dans <code style="color:#a5f3fc">demo/</code>
+            Start: <code style="color:#a5f3fc">php artisan serve</code> inside <code style="color:#a5f3fc">demo/</code>
             &nbsp;·&nbsp;
-            <code style="color:#a5f3fc">php artisan sync:status</code> pour voir la queue
+            <code style="color:#a5f3fc">php artisan sync:status</code> to inspect the queue
         </div>
     </div>
 </body>

@@ -11,8 +11,9 @@ class MergeStrategy implements SyncStrategy
         $local = $conflict['local_data'];
         $remote = $conflict['remote_data'];
 
-        // Smart merge: take non-null values from each side
-        $merged = array_merge($remote, array_filter($local, fn($v) => $v !== null));
+        // Remote is base; local overrides only when remote value is null/falsy.
+        // This means remote "truthy" values always win, while local fills in blanks.
+        $merged = array_merge($local, array_filter($remote));
 
         return [
             'data' => $merged,

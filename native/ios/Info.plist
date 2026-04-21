@@ -12,8 +12,8 @@
     <!-- Background Task Identifiers -->
     <key>BGTaskSchedulerPermittedIdentifiers</key>
     <array>
-        <string>com.vendor.offlinesync.refresh</string>
-        <string>com.vendor.offlinesync.processing</string>
+        <string>com.techparse.offlinesync.refresh</string>
+        <string>com.techparse.offlinesync.processing</string>
     </array>
     
     <!-- Network Usage Description (optionnel mais recommandé) -->

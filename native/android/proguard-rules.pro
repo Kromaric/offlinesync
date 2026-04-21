@@ -3,9 +3,9 @@
 # proguardFiles setting in build.gradle.
 
 # Keep OfflineSync public API
--keep class com.vendor.offlinesync.OfflineSyncFunctions { *; }
--keep class com.vendor.offlinesync.ConnectivityMonitor { *; }
--keep class com.vendor.offlinesync.BackgroundSyncWorker { *; }
+-keep class com.techparse.offlinesync.OfflineSyncFunctions { *; }
+-keep class com.techparse.offlinesync.ConnectivityMonitor { *; }
+-keep class com.techparse.offlinesync.BackgroundSyncWorker { *; }
 
 # Keep WorkManager
 -keep class * extends androidx.work.Worker

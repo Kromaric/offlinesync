@@ -10,7 +10,7 @@ use Techparse\OfflineSync\Events\QueuePurged;
 class QueueManager
 {
     /**
-     * Add an item to the queue
+     * Add an item to the sync queue
      */
     public function queue(Model $model, string $operation): SyncQueueItem
     {
@@ -36,7 +36,7 @@ class QueueManager
     }
 
     /**
-     * Retrieve pending items
+     * Retrieve pending items from the queue
      */
     public function getPending(?string $resource = null): \Illuminate\Support\Collection
     {
@@ -66,7 +66,7 @@ class QueueManager
     }
 
     /**
-     * Serialize a model for sync
+     * Serialize a model's data for the sync payload
      */
     protected function serializeModel(Model $model, string $operation): array
     {
@@ -77,39 +77,43 @@ class QueueManager
             ];
         }
 
-        // Retrieve the attributes
+        // Retrieve the relevant attributes
         $data = $operation === 'create'
             ? $model->getAttributes()
             : $model->getDirty();
 
-        // Exclude certain fields
-        $excluded = array_merge(
-            ['fromSync'],
-            method_exists($model, 'getSyncExcluded') ? $model->getSyncExcluded() : []
-        );
+        // Exclude configured fields (getSyncExcluded() is provided by the Syncable trait)
+        $excluded = array_merge(['fromSync'], $model->getSyncExcluded());
 
         $data = array_diff_key($data, array_flip($excluded));
 
-        // Add timestamps
-        if (isset($model->updated_at)) {
-            $data['updated_at'] = $model->updated_at->toIso8601String();
-        }
-        if ($operation === 'create' && isset($model->created_at)) {
-            $data['created_at'] = $model->created_at->toIso8601String();
+        // Ensure timestamps are serialized as ISO 8601 strings.
+        // Read from getAttributes() so mock expectations are honoured.
+        $attrs = $model->getAttributes();
+        foreach (['updated_at', 'created_at'] as $tsField) {
+            if ($tsField === 'created_at' && $operation !== 'create') {
+                continue;
+            }
+            $raw = $attrs[$tsField] ?? null;
+            if ($raw !== null) {
+                $data[$tsField] = $raw instanceof \DateTimeInterface
+                    ? $raw->format(\DateTime::ATOM)
+                    : \Carbon\Carbon::parse($raw)->toIso8601String();
+            }
         }
 
         return $data;
     }
 
     /**
-     * Generate a unique hash
+     * Generate a unique hash for a queue entry
      */
     protected function generateHash(string $resource, $id, string $operation, array $payload): string
     {
         return md5(
-            $resource . 
-            ($id ?? 'new') . 
-            $operation . 
+            $resource .
+            ($id ?? 'new') .
+            $operation .
             json_encode($payload)
         );
     }

@@ -38,10 +38,12 @@ return [
     'retry_delay' => 60,
 
     // Security
+    // The plugin is auth-agnostic. Pass any HTTP headers (e.g. a Bearer token)
+    // that every outgoing sync request should carry. The host application is
+    // responsible for setting this at runtime — see AppServiceProvider.
     'security' => [
-        'encrypt_queue' => true,
-        'auth_method' => 'bearer',
         'require_https' => env('SYNC_REQUIRE_HTTPS', true),
+        'headers'       => [],   // populated at runtime by AppServiceProvider
     ],
 
     // Logging

@@ -300,7 +300,7 @@ Index complet de toute la documentation du plugin NativePHP Offline Sync & Backu
 
 - **Site officiel** : https://techparse.fr/offline-sync
 - **Documentation en ligne** : https://docs.techparse.fr/offline-sync
-- **Repository GitHub** : https://github.com/Kromaric/offline-sync
+- **Repository GitHub** : https://github.com/Kromaric/offlinesync
 - **Support** : support@techparse.fr
 
 ---

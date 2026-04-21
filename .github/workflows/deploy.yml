@@ -68,7 +68,7 @@ jobs:
         working-directory: demo
 
       - name: Run plugin tests
-        run: vendor/bin/phpunit --stop-on-failure
+        run: vendor/bin/phpunit --stop-on-failure --no-coverage
 
   # ───────────────────────────────────────────────────────────────────────────
   # JOB 2 — Build & Deploy
@@ -185,9 +185,7 @@ jobs:
           APP_URL=$APP_URL
 
           SYNC_API_URL=$APP_URL
-          SYNC_AUTH_METHOD=bearer
           SYNC_REQUIRE_HTTPS=true
-          SYNC_ENCRYPT_QUEUE=false
 
           LOG_CHANNEL=single
           LOG_LEVEL=error
@@ -224,6 +222,9 @@ jobs:
 
           echo "Running migrations..."
           \$PHP artisan migrate --force
+
+          echo "Seeding database (skipped if already seeded)..."
+          \$PHP artisan db:seed --force
 
           echo "Building caches..."
           \$PHP artisan optimize:clear

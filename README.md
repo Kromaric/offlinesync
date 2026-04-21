@@ -4,6 +4,7 @@
 [![PHP Version](https://img.shields.io/badge/php-%5E8.1-blue.svg)](https://php.net)
 [![Laravel Version](https://img.shields.io/badge/laravel-%5E10.0%7C%5E11.0-orange.svg)](https://laravel.com)
 [![NativePHP Version](https://img.shields.io/badge/nativephp-%5E0.8.0-purple.svg)](https://nativephp.com)
+[![Live Demo](https://img.shields.io/badge/demo-live-6366f1.svg)](https://offlinesync.techparse.fr)
 
 **Offline-first synchronization plugin for NativePHP Mobile applications.**
 
@@ -18,7 +19,7 @@ Stop fighting with offline data. This plugin handles queuing, sync, and conflict
 - ✅ **4 Conflict Resolution Strategies** - Server wins, Client wins, Last write wins, Merge
 - ✅ **Auto-Connectivity Monitoring** - Syncs automatically when connection returns
 - ✅ **Background Sync** - Works even when app is closed (iOS/Android)
-- ✅ **Secure by Default** - Encrypted queue, HTTPS enforcement, token authentication
+- ✅ **Secure by Default** - HTTPS enforcement, auth-agnostic design (your app controls auth)
 - ✅ **Observable** - Laravel events, logs, Artisan commands
 - ✅ **Zero Native Code** - All native bridges included (Kotlin + Swift)
 
@@ -66,7 +67,7 @@ Edit `.env`:
 
 ```env
 SYNC_API_URL=https://api.yourapp.com
-SYNC_API_TOKEN=your-secure-token
+SYNC_REQUIRE_HTTPS=true
 ```
 
 ---
@@ -210,24 +211,23 @@ Configure in `config/offline-sync.php`:
 
 ### Authentication
 
-Supports multiple auth methods:
+The plugin is **auth-agnostic** — it does not manage tokens or credentials. Your application is responsible for authentication. To forward an auth header on every sync request, set `offline-sync.security.headers` at runtime (e.g. in your `AppServiceProvider`):
 
-```env
-# Bearer token (Laravel Sanctum)
-SYNC_AUTH_METHOD=bearer
+```php
+// app/Providers/AppServiceProvider.php
+public function boot(): void
+{
+    $token = $this->app->make(Request::class)->bearerToken();
 
-# API Key
-SYNC_AUTH_METHOD=api_key
-SYNC_API_TOKEN=your-secret-key
+    if ($token) {
+        config(['offline-sync.security.headers' => [
+            'Authorization' => 'Bearer ' . $token,
+        ]]);
+    }
+}
 ```
 
-### Encryption
-
-Enable queue encryption for sensitive data:
-
-```env
-SYNC_ENCRYPT_QUEUE=true
-```
+This works with any auth system: Laravel Sanctum, Passport, API keys, etc.
 
 ### HTTPS Enforcement
 
@@ -288,7 +288,7 @@ Event::listen(SyncCompleted::class, function ($event) {
 
 See `config/offline-sync.php` for all options:
 
-- API URL and authentication
+- API URL and security headers
 - Resource mapping
 - Conflict resolution strategies
 - Connectivity settings
@@ -348,7 +348,7 @@ composer test-coverage
 
 - **Email**: support@techparse.fr
 - **Documentation**: https://docs.techparse.fr/offline-sync
-- **Issues**: https://github.com/Kromaric/offline-sync/issues
+- **Issues**: https://github.com/Kromaric/offlinesync/issues
 
 ---
 

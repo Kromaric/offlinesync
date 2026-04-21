@@ -7,8 +7,8 @@ import BackgroundTasks
 public class BackgroundSyncScheduler {
     
     // Identifiants des tâches
-    private let refreshTaskIdentifier = "com.vendor.offlinesync.refresh"
-    private let processingTaskIdentifier = "com.vendor.offlinesync.processing"
+    private let refreshTaskIdentifier = "com.techparse.offlinesync.refresh"
+    private let processingTaskIdentifier = "com.techparse.offlinesync.processing"
     
     // Configuration
     private var intervalMinutes: Double = 30.0

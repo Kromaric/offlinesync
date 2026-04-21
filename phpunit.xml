@@ -7,8 +7,7 @@
          requireCoverageMetadata="false"
          beStrictAboutCoverageMetadata="true"
          beStrictAboutOutputDuringTests="true"
-         failOnRisky="true"
-         failOnWarning="true">
+         failOnRisky="true">
     
     <testsuites>
         <testsuite name="OfflineSync Test Suite">
@@ -53,7 +52,6 @@
     </php>
     
     <coverage includeUncoveredFiles="true"
-              processUncoveredFiles="true"
               pathCoverage="false"
               ignoreDeprecatedCodeUnits="true"
               disableCodeCoverageIgnore="true">

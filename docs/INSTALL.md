@@ -92,14 +92,7 @@ Cela créera le fichier `config/offline-sync.php`.
 # API Backend URL
 SYNC_API_URL=https://api.votre-app.com
 
-# Méthode d'authentification (bearer ou api_key)
-SYNC_AUTH_METHOD=bearer
-
-# Token API (si SYNC_AUTH_METHOD=api_key)
-SYNC_API_TOKEN=votre-token-secret
-
 # Sécurité
-SYNC_ENCRYPT_QUEUE=true
 SYNC_REQUIRE_HTTPS=true
 
 # Performance
@@ -272,7 +265,7 @@ Le plugin copie automatiquement les fichiers Kotlin nécessaires.
 Vérifiez que ces fichiers existent dans votre projet Android :
 
 ```
-android/app/src/main/kotlin/com/vendor/offlinesync/
+android/app/src/main/kotlin/com/techparse/offlinesync/
 ├── OfflineSyncFunctions.kt
 ├── ConnectivityMonitor.kt
 └── BackgroundSyncWorker.kt
@@ -431,7 +424,7 @@ Besoin d'aide ?
 
 - 📧 Email : support@techparse.fr
 - 📖 Documentation : https://docs.techparse.fr/offline-sync
-- 🐛 Issues : https://github.com/Kromaric/offline-sync/issues
+- 🐛 Issues : https://github.com/Kromaric/offlinesync/issues
 
 ---
 
