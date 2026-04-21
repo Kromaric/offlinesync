@@ -346,8 +346,8 @@ composer test-coverage
 
 ## 🤝 Support
 
-- **Email**: support@techparse.fr
-- **Documentation**: https://docs.techparse.fr/offline-sync
+- **Email**: offlinessync@techparse.fr
+- **Documentation**: https://docs.offlinesync.techparse.fr
 - **Issues**: https://github.com/Kromaric/offlinesync/issues
 
 ---

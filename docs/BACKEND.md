@@ -1,18 +1,18 @@
-# Guide Backend - Configuration API Laravel
+# Backend Guide — Laravel API Configuration
 
-Guide complet pour configurer le backend Laravel qui gère la synchronisation avec les apps mobiles.
+Complete guide to configuring the Laravel backend that handles synchronization with mobile apps.
 
 ---
 
-## 📋 Table des matières
+## 📋 Table of contents
 
 1. [Architecture](#architecture)
-2. [Setup initial](#setup-initial)
-3. [Controller de synchronisation](#controller-de-synchronisation)
-4. [Authentification](#authentification)
+2. [Initial setup](#initial-setup)
+3. [Sync controller](#sync-controller)
+4. [Authentication](#authentication)
 5. [Validation](#validation)
 6. [Performance](#performance)
-7. [Sécurité](#sécurité)
+7. [Security](#security)
 8. [Monitoring](#monitoring)
 
 ---
@@ -21,104 +21,104 @@ Guide complet pour configurer le backend Laravel qui gère la synchronisation av
 
 ```
 ┌──────────────────────────────────────┐
-│     App Mobile (NativePHP)          │
-│  ┌────────────────────────────────┐ │
-│  │   Offline Queue (SQLite)       │ │
-│  └───────────┬────────────────────┘ │
-│              │ HTTPS                 │
-└──────────────┼───────────────────────┘
+│     Mobile App (NativePHP)           │
+│  ┌────────────────────────────────┐  │
+│  │   Offline Queue (SQLite)       │  │
+│  └───────────┬────────────────────┘  │
+│              │ HTTPS                  │
+└──────────────┼────────────────────────┘
                │
                ▼
 ┌──────────────────────────────────────┐
-│     API Laravel Backend              │
-│  ┌────────────────────────────────┐ │
-│  │   SyncController               │ │
-│  │   - POST /api/sync/push        │ │
-│  │   - GET  /api/sync/pull/{res}  │ │
-│  │   - GET  /api/sync/status      │ │
-│  │   - GET  /api/sync/ping        │ │
-│  └───────────┬────────────────────┘ │
-│              │                       │
-│  ┌───────────▼────────────────────┐ │
-│  │   Database (MySQL/PostgreSQL)  │ │
-│  │   - tasks                      │ │
-│  │   - users                      │ │
-│  │   - ...                        │ │
-│  └────────────────────────────────┘ │
+│     Laravel API Backend              │
+│  ┌────────────────────────────────┐  │
+│  │   SyncController               │  │
+│  │   - POST /api/sync/push        │  │
+│  │   - GET  /api/sync/pull/{res}  │  │
+│  │   - GET  /api/sync/status      │  │
+│  │   - GET  /api/sync/ping        │  │
+│  └───────────┬────────────────────┘  │
+│              │                        │
+│  ┌───────────▼────────────────────┐  │
+│  │   Database (MySQL/PostgreSQL)  │  │
+│  │   - tasks                      │  │
+│  │   - users                      │  │
+│  │   - ...                        │  │
+│  └────────────────────────────────┘  │
 └──────────────────────────────────────┘
 ```
 
 ---
 
-## 🚀 Setup Initial
+## 🚀 Initial Setup
 
-### 1. Installation des dépendances
+### 1. Install dependencies
 
 ```bash
-# Laravel Sanctum pour l'authentification
+# Laravel Sanctum for authentication
 composer require laravel/sanctum
 
-# Optionnel : Laravel Telescope pour debug
+# Optional: Laravel Telescope for debugging
 composer require laravel/telescope --dev
 
-# Publier les configs
+# Publish configs
 php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
 php artisan migrate
 ```
 
-### 2. Configuration CORS
+### 2. CORS configuration
 
-Si votre app mobile fait des requêtes depuis un domaine différent :
+If your mobile app makes requests from a different domain:
 
-**config/cors.php :**
+**config/cors.php:**
 
 ```php
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
-    
+
     'allowed_methods' => ['*'],
-    
-    'allowed_origins' => ['*'], // En production, spécifier les domaines
-    
+
+    'allowed_origins' => ['*'], // In production, specify domains
+
     'allowed_headers' => ['*'],
-    
+
     'exposed_headers' => [],
-    
+
     'max_age' => 0,
-    
+
     'supports_credentials' => true,
 ];
 ```
 
-### 3. Configuration de Sanctum
+### 3. Sanctum configuration
 
-**config/sanctum.php :**
+**config/sanctum.php:**
 
 ```php
-'expiration' => null, // Tokens n'expirent jamais (mobile)
+'expiration' => null, // Tokens never expire (mobile)
 
 'token_prefix' => env('SANCTUM_TOKEN_PREFIX', ''),
 
 'middleware' => [
     'authenticate_session' => Laravel\Sanctum\Http\Middleware\AuthenticateSession::class,
-    'encrypt_cookies' => App\Http\Middleware\EncryptCookies::class,
-    'validate_csrf_token' => App\Http\Middleware\VerifyCsrfToken::class,
+    'encrypt_cookies'      => App\Http\Middleware\EncryptCookies::class,
+    'validate_csrf_token'  => App\Http\Middleware\VerifyCsrfToken::class,
 ],
 ```
 
 ---
 
-## 🎮 Controller de Synchronisation
+## 🎮 Sync Controller
 
-### 1. Créer le Controller
+### 1. Create the controller
 
 ```bash
 php artisan make:controller Api/SyncController
 ```
 
-### 2. Controller complet
+### 2. Full controller
 
-**app/Http/Controllers/Api/SyncController.php :**
+**app/Http/Controllers/Api/SyncController.php:**
 
 ```php
 <?php
@@ -134,32 +134,32 @@ use Carbon\Carbon;
 class SyncController extends Controller
 {
     /**
-     * Push : Recevoir les changements du client
-     * 
+     * Push: receive changes from the client
+     *
      * POST /api/sync/push
      */
     public function push(Request $request)
     {
         $validated = $request->validate([
-            'items' => 'required|array',
-            'items.*.resource' => 'required|string',
-            'items.*.resource_id' => 'nullable|string',
-            'items.*.operation' => 'required|in:create,update,delete',
-            'items.*.data' => 'required|array',
-            'items.*.timestamp' => 'required|date',
+            'items'                => 'required|array',
+            'items.*.resource'     => 'required|string',
+            'items.*.resource_id'  => 'nullable|string',
+            'items.*.operation'    => 'required|in:create,update,delete',
+            'items.*.data'         => 'required|array',
+            'items.*.timestamp'    => 'required|date',
         ]);
 
-        $synced = [];
-        $failed = [];
+        $synced    = [];
+        $failed    = [];
         $conflicts = [];
 
         DB::beginTransaction();
-        
+
         try {
             foreach ($validated['items'] as $item) {
                 try {
                     $result = $this->applyChange($item, $request->user());
-                    
+
                     if (isset($result['conflict'])) {
                         $conflicts[] = $result['conflict'];
                     } else {
@@ -167,46 +167,46 @@ class SyncController extends Controller
                     }
                 } catch (\Exception $e) {
                     $failed[] = [
-                        'item' => $item,
+                        'item'  => $item,
                         'error' => $e->getMessage(),
                     ];
-                    
+
                     Log::error('Sync item failed', [
-                        'item' => $item,
+                        'item'  => $item,
                         'error' => $e->getMessage(),
                         'trace' => $e->getTraceAsString(),
                     ]);
                 }
             }
-            
+
             DB::commit();
-            
+
             return response()->json([
-                'success' => empty($failed),
-                'synced' => count($synced),
-                'failed' => count($failed),
+                'success'   => empty($failed),
+                'synced'    => count($synced),
+                'failed'    => count($failed),
                 'conflicts' => $conflicts,
-                'errors' => $failed,
+                'errors'    => $failed,
             ]);
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Sync push failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return response()->json([
                 'success' => false,
-                'error' => 'Internal server error',
+                'error'   => 'Internal server error',
             ], 500);
         }
     }
 
     /**
-     * Pull : Envoyer les changements au client
-     * 
+     * Pull: send changes to the client
+     *
      * GET /api/sync/pull/{resource}
      */
     public function pull(Request $request, string $resource)
@@ -219,18 +219,16 @@ class SyncController extends Controller
         $since = $validated['since'] ?? now()->subDays(30);
         $limit = $validated['limit'] ?? 100;
 
-        // Déterminer la classe du modèle
+        // Resolve model class
         $modelClass = $this->getModelClass($resource);
-        
+
         if (!$modelClass) {
-            return response()->json([
-                'error' => 'Resource not found',
-            ], 404);
+            return response()->json(['error' => 'Resource not found'], 404);
         }
 
-        // Filtrer par utilisateur si le modèle a une colonne user_id
+        // Filter by user if model has a user_id column
         $query = $modelClass::where('updated_at', '>', $since);
-        
+
         if ($this->modelBelongsToUser($modelClass)) {
             $query->where('user_id', $request->user()->id);
         }
@@ -238,92 +236,92 @@ class SyncController extends Controller
         $items = $query->limit($limit)
             ->get()
             ->map(fn($model) => [
-                'id' => $model->getKey(),
+                'id'        => $model->getKey(),
                 'operation' => 'update',
-                'data' => $model->toArray(),
+                'data'      => $model->toArray(),
                 'timestamp' => $model->updated_at->toIso8601String(),
             ]);
 
         return response()->json([
-            'data' => $items,
+            'data'  => $items,
             'count' => $items->count(),
             'since' => $since,
         ]);
     }
 
     /**
-     * Status : Info sur l'état du serveur
-     * 
+     * Status: server state info
+     *
      * GET /api/sync/status
      */
     public function status(Request $request)
     {
         $user = $request->user();
-        
+
         return response()->json([
-            'server_time' => now()->toIso8601String(),
-            'user_id' => $user->id,
+            'server_time'         => now()->toIso8601String(),
+            'user_id'             => $user->id,
             'available_resources' => $this->getAvailableResources(),
         ]);
     }
 
     /**
-     * Ping : Vérifier la connexion
-     * 
+     * Ping: check connectivity
+     *
      * GET /api/sync/ping
      */
     public function ping()
     {
         return response()->json([
-            'status' => 'ok',
+            'status'    => 'ok',
             'timestamp' => now()->toIso8601String(),
         ]);
     }
 
     /**
-     * Appliquer un changement individuel
+     * Apply an individual change
      */
     protected function applyChange(array $item, $user): array
     {
         $modelClass = $this->getModelClass($item['resource']);
-        
+
         if (!$modelClass) {
             throw new \Exception("Resource {$item['resource']} not found");
         }
 
         $clientTimestamp = Carbon::parse($item['timestamp']);
 
-        // Vérifier conflit pour update/delete
+        // Check for conflict on update/delete
         if (in_array($item['operation'], ['update', 'delete']) && $item['resource_id']) {
             $existing = $modelClass::find($item['resource_id']);
-            
-            // Vérifier que la ressource appartient à l'utilisateur
+
+            // Verify resource belongs to user
             if ($existing && $this->modelBelongsToUser($modelClass)) {
                 if ($existing->user_id !== $user->id) {
                     throw new \Exception('Unauthorized access to resource');
                 }
             }
-            
+
             if ($existing && $existing->updated_at > $clientTimestamp) {
                 return [
                     'conflict' => [
-                        'resource' => $item['resource'],
-                        'resource_id' => $item['resource_id'],
-                        'local_data' => $item['data'],
-                        'remote_data' => $existing->toArray(),
-                        'local_timestamp' => $item['timestamp'],
+                        'resource'         => $item['resource'],
+                        'resource_id'      => $item['resource_id'],
+                        'local_data'       => $item['data'],
+                        'remote_data'      => $existing->toArray(),
+                        'local_timestamp'  => $item['timestamp'],
                         'remote_timestamp' => $existing->updated_at->toIso8601String(),
                     ]
                 ];
             }
         }
 
-        // Ajouter user_id si nécessaire
+        // Inject user_id if required
         if ($this->modelBelongsToUser($modelClass)) {
             $item['data']['user_id'] = $user->id;
         }
 
-        // Appliquer l'opération
+        // Apply the operation
         match($item['operation']) {
             'create' => $modelClass::create($item['data']),
             'update' => $modelClass::updateOrCreate(
@@ -337,7 +335,7 @@ class SyncController extends Controller
     }
 
     /**
-     * Obtenir la classe du modèle depuis le nom de ressource
+     * Resolve model class from resource name
      */
     protected function getModelClass(string $resource): ?string
     {
@@ -346,7 +344,7 @@ class SyncController extends Controller
     }
 
     /**
-     * Liste des ressources disponibles
+     * List available resources
      */
     protected function getAvailableResources(): array
     {
@@ -354,7 +352,7 @@ class SyncController extends Controller
     }
 
     /**
-     * Vérifier si le modèle appartient à un utilisateur
+     * Check if model belongs to a user
      */
     protected function modelBelongsToUser(string $modelClass): bool
     {
@@ -366,11 +364,11 @@ class SyncController extends Controller
 
 ---
 
-## 🔐 Authentification
+## 🔐 Authentication
 
-### 1. Routes protégées
+### 1. Protected routes
 
-**routes/api.php :**
+**routes/api.php:**
 
 ```php
 use App\Http\Controllers\Api\SyncController;
@@ -383,43 +381,41 @@ Route::middleware('auth:sanctum')->prefix('sync')->group(function () {
 });
 ```
 
-### 2. Génération de tokens
+### 2. Token generation
 
-**app/Http/Controllers/Auth/LoginController.php :**
+**app/Http/Controllers/Auth/LoginController.php:**
 
 ```php
 public function login(Request $request)
 {
     $credentials = $request->validate([
-        'email' => 'required|email',
+        'email'    => 'required|email',
         'password' => 'required',
     ]);
 
     if (!Auth::attempt($credentials)) {
-        return response()->json([
-            'error' => 'Invalid credentials',
-        ], 401);
+        return response()->json(['error' => 'Invalid credentials'], 401);
     }
 
     $user = Auth::user();
-    
-    // Créer un token pour l'app mobile
+
+    // Create a token for the mobile app
     $token = $user->createToken('mobile-app')->plainTextToken;
 
     return response()->json([
         'token' => $token,
-        'user' => $user,
+        'user'  => $user,
     ]);
 }
 ```
 
-### 3. Révocation de tokens
+### 3. Token revocation
 
 ```php
-// Révoquer tous les tokens d'un utilisateur
+// Revoke all tokens for a user
 $user->tokens()->delete();
 
-// Révoquer un token spécifique
+// Revoke a specific token
 $user->tokens()->where('id', $tokenId)->delete();
 ```
 
@@ -427,13 +423,13 @@ $user->tokens()->where('id', $tokenId)->delete();
 
 ## ✅ Validation
 
-### 1. Request personnalisé
+### 1. Custom request
 
 ```bash
 php artisan make:request SyncPushRequest
 ```
 
-**app/Http/Requests/SyncPushRequest.php :**
+**app/Http/Requests/SyncPushRequest.php:**
 
 ```php
 <?php
@@ -452,21 +448,21 @@ class SyncPushRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'items' => 'required|array|max:100', // Max 100 items par batch
-            'items.*.resource' => 'required|string|in:tasks,users,projects',
-            'items.*.resource_id' => 'nullable|uuid',
-            'items.*.operation' => 'required|in:create,update,delete',
-            'items.*.data' => 'required|array',
-            'items.*.data.title' => 'sometimes|string|max:255',
-            'items.*.timestamp' => 'required|date|before_or_equal:now',
+            'items'                  => 'required|array|max:100', // Max 100 items per batch
+            'items.*.resource'       => 'required|string|in:tasks,users,projects',
+            'items.*.resource_id'    => 'nullable|uuid',
+            'items.*.operation'      => 'required|in:create,update,delete',
+            'items.*.data'           => 'required|array',
+            'items.*.data.title'     => 'sometimes|string|max:255',
+            'items.*.timestamp'      => 'required|date|before_or_equal:now',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'items.max' => 'Trop d\'items. Maximum 100 par requête.',
-            'items.*.timestamp.before_or_equal' => 'Timestamp ne peut pas être dans le futur.',
+            'items.max'                        => 'Too many items. Maximum 100 per request.',
+            'items.*.timestamp.before_or_equal' => 'Timestamp cannot be in the future.',
         ];
     }
 }
@@ -476,7 +472,7 @@ class SyncPushRequest extends FormRequest
 
 ## ⚡ Performance
 
-### 1. Mise en cache
+### 1. Caching
 
 ```php
 use Illuminate\Support\Facades\Cache;
@@ -484,16 +480,16 @@ use Illuminate\Support\Facades\Cache;
 public function pull(Request $request, string $resource)
 {
     $cacheKey = "sync_pull_{$resource}_{$request->user()->id}_{$since}";
-    
+
     return Cache::remember($cacheKey, 300, function () use ($resource, $since) {
-        // ... requête normale
+        // ... normal query
     });
 }
 ```
 
-### 2. Indexation de la base de données
+### 2. Database indexing
 
-**Migration :**
+**Migration:**
 
 ```php
 Schema::table('tasks', function (Blueprint $table) {
@@ -502,7 +498,7 @@ Schema::table('tasks', function (Blueprint $table) {
 });
 ```
 
-### 3. Eager Loading
+### 3. Eager loading
 
 ```php
 $items = $modelClass::with(['user', 'category'])
@@ -513,22 +509,22 @@ $items = $modelClass::with(['user', 'category'])
 
 ### 4. Chunk processing
 
-Pour de grandes quantités de données :
+For large amounts of data:
 
 ```php
 $modelClass::where('updated_at', '>', $since)
     ->chunk(100, function ($items) {
-        // Traiter par lots de 100
+        // Process in batches of 100
     });
 ```
 
 ---
 
-## 🔒 Sécurité
+## 🔒 Security
 
 ### 1. Rate Limiting
 
-**app/Providers/RouteServiceProvider.php :**
+**app/Providers/RouteServiceProvider.php:**
 
 ```php
 protected function configureRateLimiting()
@@ -539,7 +535,7 @@ protected function configureRateLimiting()
 }
 ```
 
-**routes/api.php :**
+**routes/api.php:**
 
 ```php
 Route::middleware(['auth:sanctum', 'throttle:sync'])->prefix('sync')->group(function () {
@@ -547,16 +543,16 @@ Route::middleware(['auth:sanctum', 'throttle:sync'])->prefix('sync')->group(func
 });
 ```
 
-### 2. Validation des permissions
+### 2. Permission validation
 
 ```php
 protected function applyChange(array $item, $user): array
 {
-    // Vérifier que l'utilisateur a le droit de modifier cette ressource
+    // Check the user is allowed to modify this resource
     if (!$user->can('update', $item['resource'])) {
         throw new \Exception('Unauthorized');
     }
-    
+
     // ...
 }
 ```
@@ -573,19 +569,19 @@ $item['data']['title'] = Str::limit(strip_tags($item['data']['title']), 255);
 
 ## 📊 Monitoring
 
-### 1. Logs structurés
+### 1. Structured logs
 
 ```php
 Log::channel('sync')->info('Sync completed', [
-    'user_id' => $user->id,
+    'user_id'      => $user->id,
     'items_synced' => count($synced),
     'items_failed' => count($failed),
-    'conflicts' => count($conflicts),
-    'duration_ms' => microtime(true) - $startTime,
+    'conflicts'    => count($conflicts),
+    'duration_ms'  => microtime(true) - $startTime,
 ]);
 ```
 
-### 2. Métriques
+### 2. Metrics
 
 ```php
 use Illuminate\Support\Facades\Redis;
@@ -594,7 +590,7 @@ Redis::hincrby('sync:stats', 'total_syncs', 1);
 Redis::hincrby('sync:stats', 'items_synced', count($synced));
 ```
 
-### 3. Alertes
+### 3. Alerts
 
 ```php
 if (count($failed) > 10) {
@@ -606,21 +602,21 @@ if (count($failed) > 10) {
 
 ## 🧪 Tests
 
-### Test du controller
+### Controller test
 
 ```php
 public function test_push_sync_creates_items()
 {
     $user = User::factory()->create();
-    
+
     $response = $this->actingAs($user)->postJson('/api/sync/push', [
         'items' => [
             [
-                'resource' => 'tasks',
+                'resource'    => 'tasks',
                 'resource_id' => null,
-                'operation' => 'create',
-                'data' => ['title' => 'New Task'],
-                'timestamp' => now()->toIso8601String(),
+                'operation'   => 'create',
+                'data'        => ['title' => 'New Task'],
+                'timestamp'   => now()->toIso8601String(),
             ],
         ],
     ]);
@@ -628,11 +624,11 @@ public function test_push_sync_creates_items()
     $response->assertStatus(200);
     $response->assertJson([
         'success' => true,
-        'synced' => 1,
+        'synced'  => 1,
     ]);
 
     $this->assertDatabaseHas('tasks', [
-        'title' => 'New Task',
+        'title'   => 'New Task',
         'user_id' => $user->id,
     ]);
 }
@@ -640,9 +636,9 @@ public function test_push_sync_creates_items()
 
 ---
 
-## 📝 Configuration personnalisée
+## 📝 Custom configuration
 
-**config/sync.php :**
+**config/sync.php:**
 
 ```php
 return [
@@ -650,39 +646,39 @@ return [
         'tasks' => \App\Models\Task::class,
         'users' => \App\Models\User::class,
     ],
-    
+
     'max_batch_size' => 100,
-    
+
     'pull_limit' => 1000,
-    
+
     'pull_days_back' => 30,
-    
+
     'enable_caching' => true,
-    
+
     'cache_ttl' => 300, // 5 minutes
 ];
 ```
 
 ---
 
-## 🎯 Bonnes Pratiques
+## 🎯 Best Practices
 
-1. ✅ **Toujours utiliser des transactions** pour les opérations multiples
-2. ✅ **Logger tous les échecs** pour debugging
-3. ✅ **Valider strictement** les données entrantes
-4. ✅ **Limiter la taille des batches** (max 100 items)
-5. ✅ **Utiliser HTTPS** en production
-6. ✅ **Implémenter rate limiting** pour éviter les abus
-7. ✅ **Indexer les colonnes** updated_at et user_id
-8. ✅ **Tester avec de vraies données** volumineuses
+1. ✅ **Always use transactions** for multi-item operations
+2. ✅ **Log all failures** for debugging
+3. ✅ **Validate inputs strictly** on every request
+4. ✅ **Limit batch size** (max 100 items)
+5. ✅ **Use HTTPS** in production
+6. ✅ **Implement rate limiting** to prevent abuse
+7. ✅ **Index columns** `updated_at` and `user_id`
+8. ✅ **Test with realistic data volumes**
 
 ---
 
 ## 📞 Support
 
-- 📧 Email : support@techparse.fr
-- 📖 Documentation : https://docs.techparse.fr/offline-sync
+- 📧 Email: offlinessync@techparse.fr
+- 📖 Documentation: https://docs.offlinesync.techparse.fr
 
 ---
 
-**Backend configuré avec succès !** 🎉
+**Backend configured successfully!** 🎉

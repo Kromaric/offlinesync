@@ -1,69 +1,69 @@
-# Guide Dépannage & FAQ
+# Troubleshooting & FAQ
 
-Solutions aux problèmes courants et debugging d'OfflineSync.
+Solutions to common problems and debugging tips for OfflineSync.
 
 ---
 
-## 📋 Table des matières
+## 📋 Table of contents
 
-1. [Problèmes d'installation](#problèmes-dinstallation)
-2. [Problèmes de synchronisation](#problèmes-de-synchronisation)
-3. [Problèmes de connectivité](#problèmes-de-connectivité)
-4. [Problèmes de conflits](#problèmes-de-conflits)
-5. [Problèmes de performance](#problèmes-de-performance)
-6. [Debugging avancé](#debugging-avancé)
+1. [Installation issues](#installation-issues)
+2. [Sync issues](#sync-issues)
+3. [Connectivity issues](#connectivity-issues)
+4. [Conflict issues](#conflict-issues)
+5. [Performance issues](#performance-issues)
+6. [Advanced debugging](#advanced-debugging)
 7. [FAQ](#faq)
 
 ---
 
-## 🔧 Problèmes d'Installation
+## 🔧 Installation Issues
 
 ### ❌ "Class OfflineSync not found"
 
-**Cause :** Autoload non régénéré ou cache Laravel
+**Cause:** Autoload not regenerated or Laravel cache stale
 
-**Solutions :**
+**Solutions:**
 
 ```bash
-# 1. Régénérer l'autoload
+# 1. Regenerate autoload
 composer dump-autoload
 
-# 2. Effacer les caches Laravel
+# 2. Clear Laravel caches
 php artisan config:clear
 php artisan cache:clear
 php artisan view:clear
 
-# 3. Vérifier que le package est installé
+# 3. Verify the package is installed
 composer show techparse/offline-sync
 ```
 
 ---
 
-### ❌ Migrations échouent
+### ❌ Migrations fail
 
-**Erreur :** `SQLSTATE[42S01]: Base table or view already exists`
+**Error:** `SQLSTATE[42S01]: Base table or view already exists`
 
-**Solutions :**
+**Solutions:**
 
 ```bash
-# Option 1 : Rollback et réessayer
+# Option 1: Rollback and retry
 php artisan migrate:rollback
 php artisan migrate
 
-# Option 2 : Fresh migration (⚠️ SUPPRIME LES DONNÉES)
+# Option 2: Fresh migration (⚠️ DELETES ALL DATA)
 php artisan migrate:fresh
 
-# Option 3 : Vérifier le statut
+# Option 3: Check status
 php artisan migrate:status
 ```
 
-**Erreur :** `SQLSTATE[HY000]: General error: 1 no such table`
+**Error:** `SQLSTATE[HY000]: General error: 1 no such table`
 
-**Solution :** Vérifier que SQLite est installé
+**Solution:** Verify SQLite is installed
 
 ```bash
 php -m | grep sqlite
-# Si absent, installer
+# If missing, install it
 sudo apt install php-sqlite3  # Ubuntu
 brew install php              # macOS
 ```
@@ -72,91 +72,91 @@ brew install php              # macOS
 
 ### ❌ "Plugin not registered"
 
-**Cause :** Plugin non enregistré dans NativePHP
+**Cause:** Plugin not registered with NativePHP
 
-**Solution :**
+**Solution:**
 
 ```bash
 php artisan native:plugin:register techparse/offline-sync
 
-# Vérifier l'enregistrement
+# Verify registration
 php artisan native:plugin:list
 ```
 
 ---
 
-## 🔄 Problèmes de Synchronisation
+## 🔄 Sync Issues
 
-### ❌ Items ne se synchronisent pas
+### ❌ Items not syncing
 
-**Diagnostic :**
+**Diagnose:**
 
 ```bash
-# 1. Vérifier la queue
+# 1. Check the queue
 php artisan sync:status
 
-# 2. Essayer une sync manuelle
+# 2. Try a manual sync
 php artisan sync:push
 
-# 3. Vérifier les logs
+# 3. Check logs
 tail -f storage/logs/laravel.log
 ```
 
-**Causes possibles :**
+**Possible causes:**
 
-#### 1. Pas de connexion réseau
+#### 1. No network connection
 
 ```php
 use Techparse\OfflineSync\Facades\OfflineSync;
 
 $status = OfflineSync::getStatus();
-dd($status['is_online']); // false ?
+dd($status['is_online']); // false?
 ```
 
-**Solution :** Vérifier la connectivité
+**Solution:** Check connectivity
 
 ---
 
-#### 2. URL API incorrecte
+#### 2. Incorrect API URL
 
 ```env
-# Vérifier .env
-SYNC_API_URL=https://api.votre-app.com  # Correct ?
+# Check .env
+SYNC_API_URL=https://api.your-app.com  # Correct?
 ```
 
-**Test :**
+**Test:**
 
 ```bash
-curl https://api.votre-app.com/api/sync/ping
-# Devrait retourner {"status":"ok"}
+curl https://api.your-app.com/api/sync/ping
+# Should return {"status":"ok"}
 ```
 
 ---
 
-#### 3. Token invalide
+#### 3. Invalid token
 
-**Test :**
+**Test:**
 
 ```bash
-curl -H "Authorization: Bearer VOTRE_TOKEN" \
-     https://api.votre-app.com/api/sync/status
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     https://api.your-app.com/api/sync/status
 
-# Devrait retourner 200, pas 401
+# Should return 200, not 401
 ```
 
-**Solution :** Régénérer le token
+**Solution:** Regenerate the token
 
 ```php
-$user = User::find(1);
+$user  = User::find(1);
 $token = $user->createToken('mobile-app')->plainTextToken;
-// Mettre à jour le token dans l'app
+// Update the token in the app
 ```
 
 ---
 
-#### 4. Items marqués comme failed
+#### 4. Items marked as failed
 
-**Diagnostic :**
+**Diagnose:**
 
 ```php
 $failed = SyncQueueItem::where('status', 'failed')->get();
@@ -165,7 +165,7 @@ foreach ($failed as $item) {
 }
 ```
 
-**Solution :** Corriger l'erreur et réessayer
+**Solution:** Fix the error and retry
 
 ```php
 $item->update(['status' => 'pending', 'retry_count' => 0]);
@@ -173,66 +173,66 @@ $item->update(['status' => 'pending', 'retry_count' => 0]);
 
 ---
 
-### ❌ Sync très lente
+### ❌ Sync is very slow
 
-**Diagnostic :**
+**Diagnose:**
 
 ```php
-$start = microtime(true);
+$start    = microtime(true);
 OfflineSync::sync();
 $duration = (microtime(true) - $start) * 1000;
-echo "Durée: {$duration}ms";
+echo "Duration: {$duration}ms";
 ```
 
-**Causes possibles :**
+**Possible causes:**
 
-#### 1. Trop d'items en queue
+#### 1. Too many items in queue
 
 ```php
 $pending = OfflineSync::getPending();
-echo "Items en attente: " . $pending->count();
+echo "Pending items: " . $pending->count();
 ```
 
-**Solution :** Réduire le batch size ou purger
+**Solution:** Reduce batch size or purge
 
 ```env
-SYNC_BATCH_SIZE=25  # Au lieu de 50
+SYNC_BATCH_SIZE=25  # Instead of 50
 ```
 
 ```php
-OfflineSync::purgeOldItems(3); // Purger après 3 jours
+OfflineSync::purgeOldItems(3); // Purge after 3 days
 ```
 
 ---
 
-#### 2. Connexion lente
+#### 2. Slow connection
 
-**Test :**
+**Test:**
 
 ```bash
 curl -w "@curl-format.txt" -o /dev/null -s \
-     "https://api.votre-app.com/api/sync/ping"
+     "https://api.your-app.com/api/sync/ping"
 
-# curl-format.txt :
-# time_total: %{time_total}s
+# curl-format.txt:
+# time_total:   %{time_total}s
 # time_connect: %{time_connect}s
 ```
 
-**Solution :** Optimiser le serveur ou utiliser un CDN
+**Solution:** Optimise the server or use a CDN
 
 ---
 
-#### 3. Backend lent
+#### 3. Slow backend
 
-**Backend logging :**
+**Backend logging:**
 
 ```php
 $start = microtime(true);
-// ... traitement sync
+// ... sync processing
 Log::info('Sync duration', ['ms' => (microtime(true) - $start) * 1000]);
 ```
 
-**Solution :** Optimiser les queries, ajouter des index
+**Solution:** Optimise queries, add indexes
 
 ```php
 Schema::table('tasks', function (Blueprint $table) {
@@ -242,11 +242,11 @@ Schema::table('tasks', function (Blueprint $table) {
 
 ---
 
-## 🌐 Problèmes de Connectivité
+## 🌐 Connectivity Issues
 
-### ❌ "No internet connection" en permanence
+### ❌ "No internet connection" all the time
 
-**Diagnostic Android :**
+**Diagnose on Android:**
 
 ```kotlin
 val monitor = ConnectivityMonitor(context)
@@ -254,7 +254,7 @@ Log.d("Sync", "Online: ${monitor.isOnline()}")
 Log.d("Sync", "Type: ${monitor.getConnectionType()}")
 ```
 
-**Diagnostic iOS :**
+**Diagnose on iOS:**
 
 ```swift
 let monitor = ConnectivityMonitor()
@@ -262,37 +262,37 @@ print("Online: \(monitor.isOnline())")
 print("Type: \(monitor.getConnectionType())")
 ```
 
-**Causes possibles :**
+**Possible causes:**
 
-#### 1. Permissions manquantes (Android)
+#### 1. Missing permissions (Android)
 
-**Vérifier AndroidManifest.xml :**
+**Check AndroidManifest.xml:**
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 ```
 
-#### 2. Permissions manquantes (iOS)
+#### 2. Missing permissions (iOS)
 
-**Vérifier Info.plist :**
+**Check Info.plist:**
 
 ```xml
 <key>NSLocalNetworkUsageDescription</key>
-<string>Cette app a besoin d'accéder au réseau</string>
+<string>This app needs network access to synchronize your data.</string>
 ```
 
 ---
 
-### ❌ "HTTPS required" en développement local
+### ❌ "HTTPS required" in local development
 
-**Solution temporaire (DEV uniquement) :**
+**Temporary fix (DEV only):**
 
 ```env
 SYNC_REQUIRE_HTTPS=false
 ```
 
-**⚠️ EN PRODUCTION, TOUJOURS :**
+**⚠️ IN PRODUCTION, ALWAYS:**
 
 ```env
 SYNC_REQUIRE_HTTPS=true
@@ -300,40 +300,40 @@ SYNC_REQUIRE_HTTPS=true
 
 ---
 
-## ⚔️ Problèmes de Conflits
+## ⚔️ Conflict Issues
 
-### ❌ Trop de conflits
+### ❌ Too many conflicts
 
-**Diagnostic :**
+**Diagnose:**
 
 ```php
-$logs = SyncLog::recent(7)->get();
+$logs           = SyncLog::recent(7)->get();
 $totalConflicts = $logs->sum('conflicts_count');
-echo "Conflits (7 jours): {$totalConflicts}";
+echo "Conflicts (7 days): {$totalConflicts}";
 ```
 
-**Causes possibles :**
+**Possible causes:**
 
-#### 1. Mauvaise stratégie configurée
+#### 1. Wrong strategy configured
 
-**Solution :** Utiliser `last_write_wins`
+**Solution:** Use `last_write_wins`
 
 ```php
 'per_resource' => [
-    'tasks' => 'last_write_wins', // Au lieu de server_wins
+    'tasks' => 'last_write_wins', // Instead of server_wins
 ],
 ```
 
-#### 2. Timestamps désynchronisés
+#### 2. Out-of-sync timestamps
 
-**Test :**
+**Test:**
 
 ```php
-echo "Serveur: " . now()->toIso8601String() . "\n";
+echo "Server: " . now()->toIso8601String() . "\n";
 echo "Mobile: " . $mobileTimestamp . "\n";
 ```
 
-**Solution :** Synchroniser l'horloge
+**Solution:** Sync the clock
 
 ```bash
 # Linux
@@ -345,38 +345,37 @@ w32tm /resync
 
 ---
 
-### ❌ Conflits perdent des données
+### ❌ Conflicts lose data
 
-**Cause :** Stratégie `server_wins` ou `client_wins` trop stricte
+**Cause:** `server_wins` or `client_wins` strategy too strict
 
-**Solution :** Utiliser `merge` ou `last_write_wins`
+**Solution:** Use `merge` or `last_write_wins`
 
 ```php
 'per_resource' => [
-    'tasks' => 'merge', // Fusion intelligente
+    'tasks' => 'merge', // Smart field-level merge
 ],
 ```
 
 ---
 
-## 🐌 Problèmes de Performance
+## 🐌 Performance Issues
 
-### ❌ Queue devient énorme
+### ❌ Queue grows very large
 
-**Diagnostic :**
+**Diagnose:**
 
 ```php
 $queueSize = SyncQueueItem::count();
-echo "Taille queue: {$queueSize}";
+echo "Queue size: {$queueSize}";
 ```
 
-**Solutions :**
+**Solutions:**
 
-#### 1. Purge automatique
+#### 1. Automatic purge
 
 ```php
-// Ajouter au scheduler
-// app/Console/Kernel.php
+// Add to scheduler in app/Console/Kernel.php
 protected function schedule(Schedule $schedule)
 {
     $schedule->call(function () {
@@ -385,7 +384,7 @@ protected function schedule(Schedule $schedule)
 }
 ```
 
-#### 2. Limite de taille
+#### 2. Size limit
 
 ```env
 SYNC_MAX_QUEUE=1000
@@ -393,24 +392,24 @@ SYNC_MAX_QUEUE=1000
 
 ```php
 if (SyncQueueItem::count() >= config('offline-sync.performance.max_queue_size')) {
-    // Arrêter de queuer ou purger les plus anciens
+    // Stop queuing or purge oldest
     SyncQueueItem::oldest()->limit(100)->delete();
 }
 ```
 
 ---
 
-### ❌ Sync consomme trop de mémoire
+### ❌ Sync uses too much memory
 
-**Diagnostic :**
+**Diagnose:**
 
 ```php
-echo "Mémoire: " . memory_get_usage(true) / 1024 / 1024 . "MB\n";
+echo "Memory: " . memory_get_usage(true) / 1024 / 1024 . "MB\n";
 ```
 
-**Solutions :**
+**Solutions:**
 
-#### 1. Réduire le batch size
+#### 1. Reduce batch size
 
 ```env
 SYNC_BATCH_SIZE=25
@@ -419,7 +418,7 @@ SYNC_BATCH_SIZE=25
 #### 2. Chunking
 
 ```php
-// Dans SyncEngine
+// In SyncEngine
 SyncQueueItem::pending()->chunk(50, function ($items) {
     $this->processItems($items);
 });
@@ -427,43 +426,43 @@ SyncQueueItem::pending()->chunk(50, function ($items) {
 
 ---
 
-## 🔍 Debugging Avancé
+## 🔍 Advanced Debugging
 
-### Activer le mode debug
+### Enable debug mode
 
-**Laravel :**
+**Laravel:**
 
 ```env
 APP_DEBUG=true
 LOG_LEVEL=debug
 ```
 
-**OfflineSync :**
+**OfflineSync:**
 
 ```env
 SYNC_LOGGING=true
 SYNC_LOG_CHANNEL=daily
 ```
 
-### Logs détaillés
+### Detailed logs
 
 ```php
 use Illuminate\Support\Facades\Log;
 
 Log::channel('sync')->debug('Sync started', [
-    'user_id' => $user->id,
+    'user_id'   => $user->id,
     'resources' => $resources,
 ]);
 
 Log::channel('sync')->debug('Item processed', [
-    'item_id' => $item->id,
+    'item_id'   => $item->id,
     'operation' => $item->operation,
 ]);
 ```
 
-### Tracer les requêtes HTTP
+### Trace HTTP requests
 
-**Laravel Telescope :**
+**Laravel Telescope:**
 
 ```bash
 composer require laravel/telescope --dev
@@ -471,20 +470,20 @@ php artisan telescope:install
 php artisan migrate
 ```
 
-Accéder à `http://localhost/telescope` pour voir toutes les requêtes.
+Visit `http://localhost/telescope` to see all requests.
 
 ### Profiling
 
 ```php
 $start = microtime(true);
 
-// Code à profiler
+// Code to profile
 OfflineSync::sync();
 
 $duration = microtime(true) - $start;
 Log::info('Performance', [
     'duration' => $duration,
-    'memory' => memory_get_peak_usage(true),
+    'memory'   => memory_get_peak_usage(true),
 ]);
 ```
 
@@ -492,29 +491,29 @@ Log::info('Performance', [
 
 ## ❓ FAQ
 
-### Q1 : Combien de temps les items restent en queue ?
+### Q1: How long do items stay in the queue?
 
-**R :** Jusqu'à ce qu'ils soient synchronisés ou purgés.
+**A:** Until they are synchronised or purged.
 
-**Configuration :**
+**Configuration:**
 
 ```env
-SYNC_PURGE_DAYS=7  # Purger après 7 jours
+SYNC_PURGE_DAYS=7  # Purge after 7 days
 ```
 
 ---
 
-### Q2 : Que se passe-t-il si l'app se ferme pendant une sync ?
+### Q2: What happens if the app closes during a sync?
 
-**R :** La sync reprend au prochain démarrage. Les items sont persistés dans SQLite.
+**A:** The sync resumes on next launch. Items are persisted in SQLite.
 
 ---
 
-### Q3 : Peut-on sync en arrière-plan ?
+### Q3: Can sync run in the background?
 
-**R :** Oui, via WorkManager (Android) et Background Tasks (iOS).
+**A:** Yes, via WorkManager (Android) and Background Tasks (iOS).
 
-**Configuration :**
+**Configuration:**
 
 ```env
 SYNC_BACKGROUND=true
@@ -523,13 +522,13 @@ SYNC_CHECK_INTERVAL=30  # Minutes
 
 ---
 
-### Q4 : Comment tester sans backend ?
+### Q4: How to test without a backend?
 
-**R :** Utiliser des mocks HTTP :
+**A:** Use HTTP mocks:
 
 ```php
 Http::fake([
-    '*/sync/push' => Http::response(['success' => true, 'synced' => 1]),
+    '*/sync/push'   => Http::response(['success' => true, 'synced' => 1]),
     '*/sync/pull/*' => Http::response(['data' => []]),
 ]);
 
@@ -538,15 +537,15 @@ OfflineSync::sync();
 
 ---
 
-### Q5 : Les données sync sont-elles chiffrées en transit ?
+### Q5: Is synced data encrypted in transit?
 
-**R :** Oui, via HTTPS (`SYNC_REQUIRE_HTTPS=true`). Le transport est chiffré TLS. Les données au repos dans la queue locale ne sont pas chiffrées par le plugin — c'est à votre app de gérer le chiffrement local si nécessaire.
+**A:** Yes, via HTTPS (`SYNC_REQUIRE_HTTPS=true`). Transport is TLS-encrypted. Data at rest in the local queue is not encrypted by the plugin — your app is responsible for local encryption if needed.
 
 ---
 
-### Q6 : Peut-on sync en WiFi uniquement ?
+### Q6: Can sync be restricted to Wi-Fi only?
 
-**R :** Oui :
+**A:** Yes:
 
 ```env
 SYNC_REQUIRE_WIFI=true
@@ -554,15 +553,15 @@ SYNC_REQUIRE_WIFI=true
 
 ---
 
-### Q7 : Comment forcer une resynchronisation complète ?
+### Q7: How to force a full resync?
 
-**R :**
+**A:**
 
 ```php
-// Supprimer toute la queue
+// Clear the entire queue
 SyncQueueItem::truncate();
 
-// Re-queue tous les modèles
+// Re-queue all models
 Task::chunk(100, function ($tasks) {
     foreach ($tasks as $task) {
         OfflineSync::queue($task, 'update');
@@ -575,9 +574,9 @@ OfflineSync::sync();
 
 ---
 
-### Q8 : Les timestamps doivent-ils être en UTC ?
+### Q8: Should timestamps be in UTC?
 
-**R :** Oui, ISO8601 UTC est recommandé.
+**A:** Yes, ISO8601 UTC is recommended.
 
 ```php
 $timestamp = now()->timezone('UTC')->toIso8601String();
@@ -585,31 +584,31 @@ $timestamp = now()->timezone('UTC')->toIso8601String();
 
 ---
 
-### Q9 : Comment sync uniquement certains modèles ?
+### Q9: How to sync only specific models?
 
-**R :**
+**A:**
 
 ```php
-OfflineSync::sync(['tasks', 'projects']); // Seulement ces ressources
+OfflineSync::sync(['tasks', 'projects']); // Only these resources
 ```
 
 ---
 
-### Q10 : Peut-on désactiver complètement la sync ?
+### Q10: Can sync be disabled completely?
 
-**R :** Oui :
+**A:** Yes:
 
 ```env
 SYNC_AUTO_SYNC=false
 ```
 
-Ou retirer le trait `Syncable` des modèles.
+Or remove the `Syncable` trait from your models.
 
 ---
 
-## 🛠️ Outils de Diagnostic
+## 🛠️ Diagnostic Tools
 
-### Script de diagnostic complet
+### Full diagnostic script
 
 ```php
 <?php
@@ -619,47 +618,47 @@ use Techparse\OfflineSync\Facades\OfflineSync;
 use Techparse\OfflineSync\Models\SyncQueueItem;
 use Techparse\OfflineSync\Models\SyncLog;
 
-echo "=== DIAGNOSTIC OFFLINESYNC ===\n\n";
+echo "=== OFFLINESYNC DIAGNOSTIC ===\n\n";
 
 // 1. Configuration
 echo "Configuration:\n";
 echo "  API URL: " . config('offline-sync.api_url') . "\n";
-echo "  HTTPS: " . (config('offline-sync.security.require_https') ? 'Oui' : 'Non') . "\n";
+echo "  HTTPS:   " . (config('offline-sync.security.require_https') ? 'Yes' : 'No') . "\n";
 $headers = array_keys(config('offline-sync.security.headers', []));
-echo "  Headers: " . (count($headers) ? implode(', ', $headers) : 'aucun') . "\n\n";
+echo "  Headers: " . (count($headers) ? implode(', ', $headers) : 'none') . "\n\n";
 
 // 2. Queue
 echo "Queue:\n";
 $pending = SyncQueueItem::where('status', 'pending')->count();
-$failed = SyncQueueItem::where('status', 'failed')->count();
-$synced = SyncQueueItem::where('status', 'synced')->count();
+$failed  = SyncQueueItem::where('status', 'failed')->count();
+$synced  = SyncQueueItem::where('status', 'synced')->count();
 echo "  Pending: {$pending}\n";
-echo "  Failed: {$failed}\n";
-echo "  Synced: {$synced}\n\n";
+echo "  Failed:  {$failed}\n";
+echo "  Synced:  {$synced}\n\n";
 
 // 3. Logs
-echo "Logs (7 derniers jours):\n";
+echo "Logs (last 7 days):\n";
 $stats = SyncLog::getStats(7);
-echo "  Total syncs: {$stats['total_syncs']}\n";
-echo "  Succès: {$stats['successful_syncs']}\n";
-echo "  Échecs: {$stats['failed_syncs']}\n";
-echo "  Conflits: {$stats['total_conflicts']}\n";
-echo "  Durée moyenne: {$stats['avg_duration_ms']}ms\n\n";
+echo "  Total syncs:     {$stats['total_syncs']}\n";
+echo "  Successful:      {$stats['successful_syncs']}\n";
+echo "  Failed:          {$stats['failed_syncs']}\n";
+echo "  Conflicts:       {$stats['total_conflicts']}\n";
+echo "  Avg duration:    {$stats['avg_duration_ms']}ms\n\n";
 
-// 4. Connectivité
-echo "Connectivité:\n";
+// 4. Connectivity
+echo "Connectivity:\n";
 try {
     $response = Http::timeout(5)->get(config('offline-sync.api_url') . '/api/sync/ping');
-    echo "  Serveur: " . ($response->successful() ? '✅ OK' : '❌ ERREUR') . "\n";
+    echo "  Server: " . ($response->successful() ? '✅ OK' : '❌ ERROR') . "\n";
 } catch (\Exception $e) {
-    echo "  Serveur: ❌ INJOIGNABLE\n";
-    echo "  Erreur: " . $e->getMessage() . "\n";
+    echo "  Server: ❌ UNREACHABLE\n";
+    echo "  Error:  " . $e->getMessage() . "\n";
 }
 
-echo "\n=== FIN DIAGNOSTIC ===\n";
+echo "\n=== END DIAGNOSTIC ===\n";
 ```
 
-**Exécution :**
+**Run it:**
 
 ```bash
 php artisan tinker
@@ -668,31 +667,31 @@ php artisan tinker
 
 ---
 
-## 📞 Obtenir de l'aide
+## 📞 Getting help
 
-### Informations à fournir
+### Information to provide
 
-Lors d'une demande de support, incluez :
+When requesting support, include:
 
-1. **Version du plugin** : `composer show techparse/offline-sync`
-2. **Version PHP** : `php --version`
-3. **Version Laravel** : `php artisan --version`
-4. **Logs** : `storage/logs/laravel.log` (dernières 50 lignes)
-5. **Configuration** : `.env` (sans les tokens !)
-6. **Steps to reproduce** : Comment reproduire le problème
+1. **Plugin version**: `composer show techparse/offline-sync`
+2. **PHP version**: `php --version`
+3. **Laravel version**: `php artisan --version`
+4. **Logs**: `storage/logs/laravel.log` (last 50 lines)
+5. **Configuration**: `.env` (without tokens!)
+6. **Steps to reproduce**: how to reproduce the issue
 
-### Canaux de support
+### Support channels
 
-- 📧 **Email** : support@techparse.fr
-- 📖 **Documentation** : https://docs.techparse.fr
-- 🐛 **Issues GitHub** : https://github.com/Kromaric/offlinesync/issues
+- 📧 **Email**: offlinessync@techparse.fr
+- 📖 **Documentation**: https://docs.offlinesync.techparse.fr
+- 🐛 **GitHub Issues**: https://github.com/Kromaric/offlinesync/issues
 
-### Temps de réponse
+### Response times
 
-- Support email : 24-48h
-- Issues critiques : 12-24h
-- Questions générales : 48-72h
+- Email support: 24–48 h
+- Critical issues: 12–24 h
+- General questions: 48–72 h
 
 ---
 
-**Problème résolu ? Partagez votre solution !** 🎉
+**Problem solved? Share your solution!** 🎉

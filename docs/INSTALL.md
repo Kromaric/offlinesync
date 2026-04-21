@@ -1,105 +1,95 @@
-# Guide d'Installation - NativePHP Offline Sync & Backup
+# Installation Guide - NativePHP Offline Sync
 
-Guide complet pour installer et configurer le plugin OfflineSync dans votre application NativePHP Mobile.
+Complete guide to install and configure the OfflineSync plugin in your NativePHP Mobile application.
 
 ---
 
-## 📋 Prérequis
+## 📋 Requirements
 
-Avant de commencer, assurez-vous d'avoir :
-
-### Environnement de développement
+### Development environment
 
 - ✅ **PHP** ≥ 8.1
-- ✅ **Composer** (dernière version)
+- ✅ **Composer** (latest version)
 - ✅ **Laravel** ≥ 10.0
-- ✅ **NativePHP** ≥ 0.8.0 installé
-- ✅ **SQLite** (inclus avec PHP)
+- ✅ **NativePHP** ≥ 0.8.0 installed
+- ✅ **SQLite** (bundled with PHP)
 
-### Pour le développement mobile
+### Mobile development
 
 #### Android
-- ✅ Android Studio (dernière version)
-- ✅ SDK Android API Level ≥ 24
+- ✅ Android Studio (latest version)
+- ✅ Android SDK API Level ≥ 24
 - ✅ Kotlin 1.9.0+
 - ✅ Gradle 8.0+
 
 #### iOS
 - ✅ Xcode 15.0+
-- ✅ iOS 14.0+ (simulateur ou device)
-- ✅ CocoaPods ou Swift Package Manager
-- ✅ macOS (pour le développement iOS)
+- ✅ iOS 14.0+ (simulator or device)
+- ✅ CocoaPods or Swift Package Manager
+- ✅ macOS (required for iOS development)
 
 ### Backend API
-- ✅ Serveur Laravel accessible via HTTPS
-- ✅ Base de données (MySQL, PostgreSQL, etc.)
-- ✅ Laravel Sanctum (pour l'authentification)
+- ✅ Laravel server accessible via HTTPS
+- ✅ Database (MySQL, PostgreSQL, etc.)
+- ✅ Laravel Sanctum (for authentication)
 
 ---
 
 ## 🚀 Installation
 
-### Étape 1 : Installation du plugin
-
-#### Via Composer
+### Step 1 — Install the plugin
 
 ```bash
 composer require techparse/offline-sync
 ```
 
-#### Vérification de l'installation
+Verify:
 
 ```bash
 composer show techparse/offline-sync
 ```
 
-Vous devriez voir la version installée et les dépendances.
-
 ---
 
-### Étape 2 : Enregistrement du plugin
-
-Enregistrez le plugin auprès de NativePHP :
+### Step 2 — Register the plugin
 
 ```bash
 php artisan native:plugin:register techparse/offline-sync
 ```
 
-Cette commande :
-- ✅ Enregistre le plugin dans NativePHP
-- ✅ Copie les bridges natifs (Kotlin/Swift)
-- ✅ Configure les permissions
+This command:
+- ✅ Registers the plugin with NativePHP
+- ✅ Copies the native bridges (Kotlin / Swift)
+- ✅ Configures permissions
 
 ---
 
-### Étape 3 : Publication de la configuration
-
-Publiez le fichier de configuration :
+### Step 3 — Publish the configuration
 
 ```bash
 php artisan vendor:publish --tag=offline-sync-config
 ```
 
-Cela créera le fichier `config/offline-sync.php`.
+This creates `config/offline-sync.php`.
 
 ---
 
-### Étape 4 : Configuration de base
+### Step 4 — Basic configuration
 
-Éditez le fichier `.env` :
+Edit your `.env`:
 
 ```env
-# API Backend URL
-SYNC_API_URL=https://api.votre-app.com
+# Backend API URL
+SYNC_API_URL=https://api.your-app.com
 
-# Sécurité
+# Security
 SYNC_REQUIRE_HTTPS=true
 
 # Performance
 SYNC_BATCH_SIZE=50
 SYNC_MAX_QUEUE=1000
 
-# Connectivité
+# Connectivity
 SYNC_AUTO_SYNC=true
 SYNC_REQUIRE_WIFI=false
 
@@ -114,25 +104,23 @@ SYNC_LOG_CHANNEL=daily
 
 ---
 
-### Étape 5 : Exécution des migrations
-
-Créez les tables de la base de données :
+### Step 5 — Run migrations
 
 ```bash
 php artisan migrate
 ```
 
-Cela créera :
-- ✅ `offline_sync_queue` - File d'attente de synchronisation
-- ✅ `offline_sync_logs` - Historique des synchronisations
+This creates:
+- ✅ `offline_sync_queue` — synchronization queue
+- ✅ `offline_sync_logs` — sync history
 
-#### Vérification
+Verify:
 
 ```bash
 php artisan migrate:status
 ```
 
-Vous devriez voir :
+Expected output:
 ```
 Ran? Migration
 Yes  2025_01_01_000001_create_offline_sync_queue_table
@@ -141,9 +129,9 @@ Yes  2025_01_01_000002_create_offline_sync_logs_table
 
 ---
 
-### Étape 6 : Configuration des modèles
+### Step 6 — Configure your models
 
-Ajoutez le trait `Syncable` à vos modèles Eloquent :
+Add the `Syncable` trait to your Eloquent models:
 
 ```php
 <?php
@@ -156,64 +144,62 @@ use Techparse\OfflineSync\Traits\Syncable;
 class Task extends Model
 {
     use Syncable;
-    
+
     protected $fillable = ['title', 'description', 'completed'];
-    
-    // Optionnel : personnaliser le nom de la ressource
+
+    // Optional: customize the resource name
     protected $syncResourceName = 'tasks';
-    
-    // Optionnel : exclure certains champs de la sync
+
+    // Optional: exclude fields from sync
     protected $syncExcluded = ['internal_notes', 'admin_only'];
 }
 ```
 
 ---
 
-### Étape 7 : Mapping des ressources
+### Step 7 — Map resources
 
-Éditez `config/offline-sync.php` :
+Edit `config/offline-sync.php`:
 
 ```php
 'resource_mapping' => [
-    'tasks' => \App\Models\Task::class,
-    'users' => \App\Models\User::class,
+    'tasks'    => \App\Models\Task::class,
+    'users'    => \App\Models\User::class,
     'projects' => \App\Models\Project::class,
-    // Ajoutez vos autres modèles...
+    // Add your other models...
 ],
 ```
 
 ---
 
-### Étape 8 : Configuration des conflits
-
-Configurez les stratégies de résolution de conflits :
+### Step 8 — Configure conflict resolution
 
 ```php
 'conflict_resolution' => [
-    // Stratégie par défaut pour toutes les ressources
+    // Default strategy for all resources
     'default_strategy' => 'last_write_wins',
-    
-    // Stratégies spécifiques par ressource
+
+    // Per-resource strategies
     'per_resource' => [
-        'tasks' => 'last_write_wins',
-        'users' => 'server_wins',      // Les données utilisateur du serveur prioritaires
-        'settings' => 'client_wins',   // Les paramètres locaux prioritaires
-        'notes' => 'merge',            // Fusion intelligente
+        'tasks'    => 'last_write_wins',
+        'users'    => 'server_wins',    // Server user data takes priority
+        'settings' => 'client_wins',   // Local settings take priority
+        'notes'    => 'merge',         // Smart field-level merge
     ],
 ],
 ```
 
-**Stratégies disponibles :**
-- `server_wins` - Le serveur gagne toujours
-- `client_wins` - Le client gagne toujours
-- `last_write_wins` - Le plus récent gagne
-- `merge` - Fusion intelligente des champs
+**Available strategies:**
+- `server_wins` — server always wins
+- `client_wins` — client always wins
+- `last_write_wins` — newest timestamp wins
+- `merge` — smart field-level merge
 
 ---
 
-## 🔧 Configuration Backend
+## 🔧 Backend Setup
 
-### Étape 9 : Installation de Sanctum (si pas déjà fait)
+### Step 9 — Install Sanctum (if not already done)
 
 ```bash
 composer require laravel/sanctum
@@ -221,9 +207,9 @@ php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
 php artisan migrate
 ```
 
-### Étape 10 : Configuration des routes API
+### Step 10 — Configure API routes
 
-Ajoutez dans `routes/api.php` :
+Add to `routes/api.php`:
 
 ```php
 use Techparse\OfflineSync\Http\Controllers\SyncController;
@@ -236,33 +222,47 @@ Route::middleware('auth:sanctum')->prefix('sync')->group(function () {
 });
 ```
 
-### Étape 11 : Génération de tokens
+### Step 11 — Token generation
 
-Pour chaque utilisateur de l'app mobile :
+In your login controller:
 
 ```php
-// Dans votre controller de login
-$user = User::find(1);
 $token = $user->createToken('mobile-app')->plainTextToken;
 
-// Stocker ce token dans l'app mobile
 return response()->json([
     'token' => $token,
-    'user' => $user,
+    'user'  => $user,
 ]);
+```
+
+### Step 12 — Inject the token into plugin headers
+
+In `app/Providers/AppServiceProvider.php`:
+
+```php
+use Illuminate\Http\Request;
+
+public function boot(): void
+{
+    $token = $this->app->make(Request::class)->bearerToken();
+
+    if ($token) {
+        config(['offline-sync.security.headers' => [
+            'Authorization' => 'Bearer ' . $token,
+        ]]);
+    }
+}
 ```
 
 ---
 
-## 📱 Configuration Mobile
+## 📱 Mobile Setup
 
 ### Android
 
-Le plugin copie automatiquement les fichiers Kotlin nécessaires.
+The plugin automatically copies the required Kotlin files.
 
-#### Vérification
-
-Vérifiez que ces fichiers existent dans votre projet Android :
+Verify these files exist in your Android project:
 
 ```
 android/app/src/main/kotlin/com/techparse/offlinesync/
@@ -271,9 +271,7 @@ android/app/src/main/kotlin/com/techparse/offlinesync/
 └── BackgroundSyncWorker.kt
 ```
 
-#### Permissions
-
-Vérifiez dans `AndroidManifest.xml` :
+Check `AndroidManifest.xml`:
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
@@ -283,9 +281,7 @@ Vérifiez dans `AndroidManifest.xml` :
 
 ### iOS
 
-#### Vérification
-
-Vérifiez que ces fichiers existent :
+Verify these files exist:
 
 ```
 ios/Sources/OfflineSync/
@@ -294,13 +290,11 @@ ios/Sources/OfflineSync/
 └── BackgroundSyncScheduler.swift
 ```
 
-#### Configuration Info.plist
-
-Ajoutez dans `Info.plist` :
+Add to `Info.plist`:
 
 ```xml
 <key>NSLocalNetworkUsageDescription</key>
-<string>Cette app a besoin d'accéder au réseau pour synchroniser vos données.</string>
+<string>This app needs network access to sync your data.</string>
 
 <key>UIBackgroundModes</key>
 <array>
@@ -311,15 +305,15 @@ Ajoutez dans `Info.plist` :
 
 ---
 
-## ✅ Vérification de l'installation
+## ✅ Verify the installation
 
-### Test 1 : Vérifier les commandes Artisan
+### Test 1 — Artisan commands
 
 ```bash
 php artisan list sync
 ```
 
-Vous devriez voir :
+Expected:
 ```
 sync:clear   Clear sync queue
 sync:pull    Pull remote changes from the server
@@ -327,124 +321,90 @@ sync:push    Push local changes to the server
 sync:status  Show sync queue status
 ```
 
-### Test 2 : Créer un item de test
+### Test 2 — Create a test item
 
-```php
-// Dans tinker ou un controller
+```bash
 php artisan tinker
-
 >>> $task = \App\Models\Task::create(['title' => 'Test Sync']);
 >>> \Techparse\OfflineSync\Facades\OfflineSync::getPending()->count();
 => 1
 ```
 
-### Test 3 : Vérifier le statut
+### Test 3 — Check status
 
 ```bash
 php artisan sync:status
 ```
 
-Vous devriez voir votre item en attente.
-
-### Test 4 : Tester la connexion backend
+### Test 4 — Test backend connectivity
 
 ```bash
-curl https://api.votre-app.com/api/sync/ping \
-  -H "Authorization: Bearer votre-token"
+curl https://api.your-app.com/api/sync/ping \
+  -H "Authorization: Bearer your-token"
 ```
 
-Réponse attendue :
+Expected response:
 ```json
 {"status":"ok"}
 ```
 
 ---
 
-## 🔍 Dépannage
+## 🔍 Troubleshooting
 
-### Problème : "Class OfflineSync not found"
+### "Class OfflineSync not found"
 
-**Solution :**
 ```bash
 composer dump-autoload
 php artisan config:clear
 php artisan cache:clear
 ```
 
-### Problème : Migrations échouent
+### Migrations fail
 
-**Solution :**
 ```bash
-# Rollback et réessayer
 php artisan migrate:rollback
 php artisan migrate
 ```
 
-### Problème : Routes API non accessibles
+### API routes not accessible
 
-**Vérifiez :**
-1. Sanctum est installé : `composer show laravel/sanctum`
-2. Token est valide
-3. CORS est configuré (si frontend séparé)
+1. Check Sanctum is installed: `composer show laravel/sanctum`
+2. Verify the token is valid
+3. Check CORS if the frontend is on a different domain
 
-### Problème : Items ne se synchronisent pas
+### Items not syncing
 
-**Vérifiez :**
-1. La connectivité : `php artisan sync:status`
-2. Les logs : `storage/logs/laravel.log`
-3. La configuration de l'API : `.env` → `SYNC_API_URL`
+1. Check connectivity: `php artisan sync:status`
+2. Check logs: `storage/logs/laravel.log`
+3. Verify API URL: `.env` → `SYNC_API_URL`
 
-### Problème : Erreur HTTPS required
+### "HTTPS required" error
 
-**Solution :**
 ```env
-# Pour développement local uniquement
+# Local development only
 SYNC_REQUIRE_HTTPS=false
 
-# En production, TOUJOURS utiliser HTTPS
+# Always use HTTPS in production
 SYNC_REQUIRE_HTTPS=true
 ```
 
 ---
 
-## 🎓 Prochaines étapes
+## 🎓 Next steps
 
-Une fois l'installation terminée :
-
-1. ✅ **Lire le guide Backend** : [BACKEND.md](BACKEND.md)
-2. ✅ **Configurer les conflits** : [CONFLICTS.md](CONFLICTS.md)
-3. ✅ **Sécuriser l'app** : [SECURITY.md](SECURITY.md)
-4. ✅ **Utiliser l'API** : Voir [README.md](../README.md)
+1. ✅ **Read the Backend guide**: [BACKEND.md](BACKEND.md)
+2. ✅ **Configure conflicts**: [CONFLICTS.md](CONFLICTS.md)
+3. ✅ **Secure your app**: [SECURITY.md](SECURITY.md)
+4. ✅ **Full API reference**: [README.md](../README.md)
 
 ---
 
 ## 📞 Support
 
-Besoin d'aide ?
-
-- 📧 Email : support@techparse.fr
-- 📖 Documentation : https://docs.techparse.fr/offline-sync
-- 🐛 Issues : https://github.com/Kromaric/offlinesync/issues
+- 📧 Email: offlinessync@techparse.fr
+- 🐛 Issues: https://github.com/Kromaric/offlinesync/issues
 
 ---
 
-## 🎉 Installation réussie !
-
-Votre plugin OfflineSync est maintenant installé et configuré.
-
-**Commencez à synchroniser :**
-
-```php
-use Techparse\OfflineSync\Facades\OfflineSync;
-
-// Créer des données (automatiquement queued)
-$task = Task::create(['title' => 'Ma première tâche']);
-
-// Synchroniser
-OfflineSync::sync(['tasks']);
-
-// Vérifier
-$status = OfflineSync::getStatus();
-```
-
-Bon développement ! 🚀
+**Happy syncing!** 🚀

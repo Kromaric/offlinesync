@@ -1,0 +1,30 @@
+title: OfflineSync Documentation
+description: NativePHP Offline Sync & Backup — complete documentation
+url: "https://docs.offlinesync.techparse.fr"
+
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
+
+markdown: kramdown
+highlighter: rouge
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Navigation
+header_pages:
+  - README.md
+  - INSTALL.md
+  - BACKEND.md
+  - CONFLICTS.md
+  - SECURITY.md
+  - TESTING.md
+  - TROUBLESHOOTING.md
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default

@@ -304,5 +304,5 @@ private func callPhpFunction(function: String, params: [String: Any]) throws -> 
 
 ## 📞 Support
 
-- 📧 Email: support@techparse.fr
+- 📧 Email: offlinessync@techparse.fr
 - 🐛 Issues: https://github.com/Kromaric/offlinesync/issues

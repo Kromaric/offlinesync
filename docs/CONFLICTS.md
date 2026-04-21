@@ -1,282 +1,282 @@
-# Guide Résolution de Conflits
+# Conflict Resolution Guide
 
-Guide complet pour comprendre et configurer la résolution de conflits dans OfflineSync.
+Complete guide to understanding and configuring conflict resolution in OfflineSync.
 
 ---
 
-## 📋 Table des matières
+## 📋 Table of contents
 
-1. [Qu'est-ce qu'un conflit ?](#quest-ce-quun-conflit-)
-2. [Les 4 stratégies](#les-4-stratégies)
+1. [What is a conflict?](#what-is-a-conflict)
+2. [The 4 strategies](#the-4-strategies)
 3. [Configuration](#configuration)
-4. [Cas d'usage](#cas-dusage)
-5. [Stratégies personnalisées](#stratégies-personnalisées)
+4. [Use cases](#use-cases)
+5. [Custom strategies](#custom-strategies)
 6. [Debugging](#debugging)
 
 ---
 
-## ❓ Qu'est-ce qu'un conflit ?
+## ❓ What is a conflict?
 
-Un conflit se produit quand **les mêmes données** ont été modifiées à la fois **localement** (sur l'app mobile) et **sur le serveur** depuis la dernière synchronisation.
+A conflict occurs when **the same data** has been modified both **locally** (on the mobile app) and **on the server** since the last synchronization.
 
-### Exemple de conflit
+### Conflict example
 
 ```
-Situation initiale :
+Initial state:
 ┌─────────────────────┬─────────────────────┐
-│ App Mobile          │ Serveur            │
+│ Mobile App          │ Server              │
 ├─────────────────────┼─────────────────────┤
-│ Task #1             │ Task #1            │
-│ title: "Acheter"    │ title: "Acheter"   │
-│ updated: 10:00      │ updated: 10:00     │
+│ Task #1             │ Task #1             │
+│ title: "Buy"        │ title: "Buy"        │
+│ updated: 10:00      │ updated: 10:00      │
 └─────────────────────┴─────────────────────┘
 
-Mode Offline - L'utilisateur modifie sur mobile :
+Offline mode — user edits on mobile:
 ┌─────────────────────┬─────────────────────┐
-│ App Mobile          │ Serveur            │
+│ Mobile App          │ Server              │
 ├─────────────────────┼─────────────────────┤
-│ Task #1             │ Task #1            │
-│ title: "Acheter 🍎" │ title: "Acheter"   │
-│ updated: 10:30      │ updated: 10:00     │
+│ Task #1             │ Task #1             │
+│ title: "Buy 🍎"     │ title: "Buy"        │
+│ updated: 10:30      │ updated: 10:00      │
 └─────────────────────┴─────────────────────┘
 
-Pendant ce temps, un collègue modifie sur le serveur :
+Meanwhile, a colleague edits on the server:
 ┌─────────────────────┬─────────────────────┐
-│ App Mobile          │ Serveur            │
+│ Mobile App          │ Server              │
 ├─────────────────────┼─────────────────────┤
-│ Task #1             │ Task #1            │
-│ title: "Acheter 🍎" │ title: "Acheter 🍞"│
-│ updated: 10:30      │ updated: 10:25     │
+│ Task #1             │ Task #1             │
+│ title: "Buy 🍎"     │ title: "Buy 🍞"     │
+│ updated: 10:30      │ updated: 10:25      │
 └─────────────────────┴─────────────────────┘
 
-❌ CONFLIT lors de la synchronisation !
-Quelle version garder ? 🍎 ou 🍞 ?
+❌ CONFLICT on sync!
+Which version to keep? 🍎 or 🍞?
 ```
 
 ---
 
-## 🎯 Les 4 Stratégies
+## 🎯 The 4 Strategies
 
-OfflineSync propose 4 stratégies prêtes à l'emploi :
+OfflineSync provides 4 ready-to-use strategies:
 
-### 1. Server Wins (Le serveur gagne)
+### 1. Server Wins
 
-**Comportement :** Les données du serveur **écrasent toujours** les données locales.
+**Behaviour:** Server data **always overwrites** local data.
 
-**Avantages :**
-- ✅ Simple et prévisible
-- ✅ Le serveur reste la source de vérité
-- ✅ Aucune perte de données serveur
+**Advantages:**
+- ✅ Simple and predictable
+- ✅ Server remains the source of truth
+- ✅ No server data loss
 
-**Inconvénients :**
-- ❌ Les modifications locales sont perdues
-- ❌ Frustrant pour l'utilisateur
+**Disadvantages:**
+- ❌ Local changes are lost
+- ❌ Potentially frustrating for the user
 
-**Quand l'utiliser :**
-- Données critiques (finances, inventaire)
-- Informations système (paramètres globaux)
-- Données partagées importantes
+**When to use:**
+- Critical data (finances, inventory)
+- System information (global settings)
+- Important shared data
 
-**Exemple :**
+**Example:**
 
 ```php
 'conflict_resolution' => [
     'per_resource' => [
-        'users' => 'server_wins',      // Profils utilisateurs
-        'prices' => 'server_wins',      // Prix des produits
-        'inventory' => 'server_wins',   // Stock
+        'users'     => 'server_wins',  // User profiles
+        'prices'    => 'server_wins',  // Product prices
+        'inventory' => 'server_wins',  // Stock levels
     ],
 ],
 ```
 
-**Résultat du conflit :**
+**Conflict result:**
 ```
-Avant sync : Mobile = "Acheter 🍎" / Serveur = "Acheter 🍞"
-Après sync : Mobile = "Acheter 🍞" / Serveur = "Acheter 🍞"
-✅ Le serveur a gagné
+Before sync: Mobile = "Buy 🍎" / Server = "Buy 🍞"
+After sync:  Mobile = "Buy 🍞" / Server = "Buy 🍞"
+✅ Server won
 ```
 
 ---
 
-### 2. Client Wins (Le client gagne)
+### 2. Client Wins
 
-**Comportement :** Les données locales **écrasent toujours** les données du serveur.
+**Behaviour:** Local data **always overwrites** server data.
 
-**Avantages :**
-- ✅ Les modifications locales sont toujours préservées
-- ✅ Bonne UX pour l'utilisateur final
-- ✅ Utile pour les préférences personnelles
+**Advantages:**
+- ✅ Local changes are always preserved
+- ✅ Great UX for the end user
+- ✅ Ideal for personal preferences
 
-**Inconvénients :**
-- ❌ Peut écraser des données serveur importantes
-- ❌ Risque de conflits avec d'autres utilisateurs
+**Disadvantages:**
+- ❌ May overwrite important server data
+- ❌ Risk of conflicts with other users
 
-**Quand l'utiliser :**
-- Préférences utilisateur personnelles
-- Paramètres locaux
-- Brouillons et notes privées
+**When to use:**
+- Personal user preferences
+- Local settings
+- Drafts and private notes
 
-**Exemple :**
+**Example:**
 
 ```php
 'conflict_resolution' => [
     'per_resource' => [
-        'settings' => 'client_wins',    // Paramètres perso
-        'preferences' => 'client_wins', // Préférences UI
-        'drafts' => 'client_wins',      // Brouillons
+        'settings'    => 'client_wins', // Personal settings
+        'preferences' => 'client_wins', // UI preferences
+        'drafts'      => 'client_wins', // Drafts
     ],
 ],
 ```
 
-**Résultat du conflit :**
+**Conflict result:**
 ```
-Avant sync : Mobile = "Acheter 🍎" / Serveur = "Acheter 🍞"
-Après sync : Mobile = "Acheter 🍎" / Serveur = "Acheter 🍎"
-✅ Le client a gagné
+Before sync: Mobile = "Buy 🍎" / Server = "Buy 🍞"
+After sync:  Mobile = "Buy 🍎" / Server = "Buy 🍎"
+✅ Client won
 ```
 
 ---
 
-### 3. Last Write Wins (Le dernier gagne)
+### 3. Last Write Wins
 
-**Comportement :** La version avec le **timestamp le plus récent** gagne.
+**Behaviour:** The version with the **most recent timestamp** wins.
 
-**Avantages :**
-- ✅ Logique et équitable
-- ✅ Basé sur des faits (timestamp)
-- ✅ Bon compromis général
+**Advantages:**
+- ✅ Logical and fair
+- ✅ Fact-based (timestamp)
+- ✅ Good general-purpose compromise
 
-**Inconvénients :**
-- ⚠️ Dépend de l'horloge système
-- ❌ Si les horloges sont désynchronisées, résultats imprévisibles
+**Disadvantages:**
+- ⚠️ Depends on system clock accuracy
+- ❌ Unpredictable results if clocks are out of sync
 
-**Quand l'utiliser :**
-- **Défaut recommandé** pour la plupart des cas
-- Données collaboratives
-- Documents partagés
+**When to use:**
+- **Recommended default** for most cases
+- Collaborative data
+- Shared documents
 
-**Exemple :**
+**Example:**
 
 ```php
 'conflict_resolution' => [
-    'default_strategy' => 'last_write_wins', // Défaut
+    'default_strategy' => 'last_write_wins', // Default
     'per_resource' => [
-        'tasks' => 'last_write_wins',
+        'tasks'    => 'last_write_wins',
         'projects' => 'last_write_wins',
     ],
 ],
 ```
 
-**Résultat du conflit :**
+**Conflict result:**
 ```
-Avant sync : 
-  Mobile = "Acheter 🍎" (updated: 10:30)
-  Serveur = "Acheter 🍞" (updated: 10:25)
+Before sync:
+  Mobile = "Buy 🍎" (updated: 10:30)
+  Server = "Buy 🍞" (updated: 10:25)
 
-Après sync :
-  Mobile = "Acheter 🍎" / Serveur = "Acheter 🍎"
-✅ Le mobile a gagné (plus récent)
+After sync:
+  Mobile = "Buy 🍎" / Server = "Buy 🍎"
+✅ Mobile won (more recent)
 ```
 
-**Cas inverse :**
+**Reverse case:**
 ```
-Avant sync : 
-  Mobile = "Acheter 🍎" (updated: 10:20)
-  Serveur = "Acheter 🍞" (updated: 10:25)
+Before sync:
+  Mobile = "Buy 🍎" (updated: 10:20)
+  Server = "Buy 🍞" (updated: 10:25)
 
-Après sync :
-  Mobile = "Acheter 🍞" / Serveur = "Acheter 🍞"
-✅ Le serveur a gagné (plus récent)
+After sync:
+  Mobile = "Buy 🍞" / Server = "Buy 🍞"
+✅ Server won (more recent)
 ```
 
 ---
 
-### 4. Merge (Fusion intelligente)
+### 4. Merge
 
-**Comportement :** Fusionne les champs des deux versions en préférant les **valeurs non-null**.
+**Behaviour:** Merges fields from both versions, preferring **non-null values**.
 
-**Avantages :**
-- ✅ Aucune donnée perdue
-- ✅ Combine le meilleur des deux
-- ✅ Idéal pour les objets avec beaucoup de champs
+**Advantages:**
+- ✅ No data lost
+- ✅ Combines the best of both
+- ✅ Ideal for objects with many fields
 
-**Inconvénients :**
-- ⚠️ Peut créer des incohérences logiques
-- ❌ Plus complexe à comprendre
+**Disadvantages:**
+- ⚠️ May create logical inconsistencies
+- ❌ More complex to reason about
 
-**Quand l'utiliser :**
-- Fiches produits avec nombreux champs
-- Profils utilisateurs complets
-- Documents structurés
+**When to use:**
+- Product records with many fields
+- Complete user profiles
+- Structured documents
 
-**Exemple :**
+**Example:**
 
 ```php
 'conflict_resolution' => [
     'per_resource' => [
-        'products' => 'merge',  // Fiches produits
-        'profiles' => 'merge',  // Profils utilisateurs
+        'products' => 'merge', // Product records
+        'profiles' => 'merge', // User profiles
     ],
 ],
 ```
 
-**Résultat du conflit :**
+**Conflict result:**
 ```
-Avant sync :
+Before sync:
 Mobile = {
-  title: "Acheter 🍎",
-  description: "Pommes rouges",
+  title: "Buy 🍎",
+  description: "Red apples",
   quantity: null,
   priority: "high"
 }
 
-Serveur = {
-  title: "Acheter 🍞",
+Server = {
+  title: "Buy 🍞",
   description: null,
   quantity: 3,
   priority: "medium"
 }
 
-Après sync (fusion) :
+After sync (merge):
 {
-  title: "Acheter 🍞",        // Serveur (base)
-  description: "Pommes rouges", // Mobile (non-null)
-  quantity: 3,                  // Serveur (non-null)
-  priority: "high"              // Mobile (non-null override)
+  title: "Buy 🍞",          // Server (base)
+  description: "Red apples", // Mobile (non-null)
+  quantity: 3,               // Server (non-null)
+  priority: "high"           // Mobile (non-null override)
 }
-✅ Fusion des deux versions
+✅ Both versions merged
 ```
 
 ---
 
 ## ⚙️ Configuration
 
-### Configuration globale
+### Global configuration
 
-**config/offline-sync.php :**
+**config/offline-sync.php:**
 
 ```php
 return [
     'conflict_resolution' => [
-        // Stratégie par défaut pour toutes les ressources
+        // Default strategy for all resources
         'default_strategy' => 'last_write_wins',
-        
-        // Stratégies spécifiques par ressource
+
+        // Per-resource strategies
         'per_resource' => [
-            // Données critiques → Server Wins
-            'users' => 'server_wins',
-            'prices' => 'server_wins',
+            // Critical data → Server Wins
+            'users'     => 'server_wins',
+            'prices'    => 'server_wins',
             'inventory' => 'server_wins',
-            
-            // Préférences personnelles → Client Wins
-            'settings' => 'client_wins',
+
+            // Personal preferences → Client Wins
+            'settings'    => 'client_wins',
             'preferences' => 'client_wins',
-            
-            // Collaboratif → Last Write Wins
-            'tasks' => 'last_write_wins',
+
+            // Collaborative → Last Write Wins
+            'tasks'    => 'last_write_wins',
             'projects' => 'last_write_wins',
-            
-            // Données complexes → Merge
+
+            // Complex data → Merge
             'products' => 'merge',
             'profiles' => 'merge',
         ],
@@ -284,67 +284,67 @@ return [
 ];
 ```
 
-### Changement dynamique
+### Dynamic change
 
 ```php
 use Techparse\OfflineSync\Facades\OfflineSync;
 
-// Changer la stratégie à la volée
+// Change strategy on the fly
 config(['offline-sync.conflict_resolution.per_resource.tasks' => 'client_wins']);
 
-// Synchroniser
+// Sync
 OfflineSync::sync(['tasks']);
 ```
 
 ---
 
-## 💼 Cas d'Usage
+## 💼 Use Cases
 
-### Cas 1 : Application de prise de notes
+### Case 1: Note-taking app
 
-**Besoin :** L'utilisateur ne veut jamais perdre ses modifications locales.
+**Need:** The user never wants to lose local changes.
 
-**Solution :**
+**Solution:**
 
 ```php
 'per_resource' => [
-    'notes' => 'client_wins',
+    'notes'  => 'client_wins',
     'drafts' => 'client_wins',
 ],
 ```
 
-### Cas 2 : Application de gestion d'inventaire
+### Case 2: Inventory management app
 
-**Besoin :** L'inventaire du serveur est la source de vérité absolue.
+**Need:** Server inventory is the absolute source of truth.
 
-**Solution :**
+**Solution:**
 
 ```php
 'per_resource' => [
-    'inventory' => 'server_wins',
+    'inventory'   => 'server_wins',
     'stock_levels' => 'server_wins',
 ],
 ```
 
-### Cas 3 : Application collaborative (Trello-like)
+### Case 3: Collaborative app (Trello-like)
 
-**Besoin :** Plusieurs utilisateurs modifient les mêmes tâches.
+**Need:** Multiple users edit the same tasks.
 
-**Solution :**
+**Solution:**
 
 ```php
 'per_resource' => [
-    'tasks' => 'last_write_wins',
-    'boards' => 'last_write_wins',
-    'comments' => 'client_wins', // Les commentaires ne se surchargent pas
+    'tasks'    => 'last_write_wins',
+    'boards'   => 'last_write_wins',
+    'comments' => 'client_wins', // Comments don't overwrite each other
 ],
 ```
 
-### Cas 4 : E-commerce avec fiches produits
+### Case 4: E-commerce with product records
 
-**Besoin :** Combiner prix (serveur) et notes perso (local).
+**Need:** Combine server prices with personal local notes.
 
-**Solution :**
+**Solution:**
 
 ```php
 'per_resource' => [
@@ -352,25 +352,25 @@ OfflineSync::sync(['tasks']);
 ],
 ```
 
-**Exemple :**
+**Example:**
 ```
-Mobile modifie :
-{ id: 1, personal_note: "À acheter" }
+Mobile edits:
+{ id: 1, personal_note: "To buy" }
 
-Serveur modifie :
+Server edits:
 { id: 1, price: 29.99 }
 
-Résultat fusion :
-{ id: 1, price: 29.99, personal_note: "À acheter" }
+Merge result:
+{ id: 1, price: 29.99, personal_note: "To buy" }
 ```
 
 ---
 
-## 🔧 Stratégies Personnalisées
+## 🔧 Custom Strategies
 
-Vous pouvez créer vos propres stratégies de résolution.
+You can create your own resolution strategies.
 
-### 1. Créer une stratégie
+### 1. Create a strategy
 
 ```php
 <?php
@@ -383,21 +383,21 @@ class PriorityStrategy implements SyncStrategy
 {
     public function resolve(array $conflict): array
     {
-        $local = $conflict['local_data'];
+        $local  = $conflict['local_data'];
         $remote = $conflict['remote_data'];
-        
-        // Gagner selon la priorité
+
+        // Win based on priority
         if (($local['priority'] ?? 0) > ($remote['priority'] ?? 0)) {
             return [
-                'data' => $local,
+                'data'   => $local,
                 'winner' => 'client',
                 'action' => 'force_push',
                 'reason' => 'higher_priority',
             ];
         }
-        
+
         return [
-            'data' => $remote,
+            'data'   => $remote,
             'winner' => 'server',
             'action' => 'overwrite_local',
             'reason' => 'lower_priority',
@@ -411,9 +411,9 @@ class PriorityStrategy implements SyncStrategy
 }
 ```
 
-### 2. Enregistrer la stratégie
+### 2. Register the strategy
 
-**app/Providers/AppServiceProvider.php :**
+**app/Providers/AppServiceProvider.php:**
 
 ```php
 use Techparse\OfflineSync\ConflictResolver;
@@ -426,13 +426,12 @@ public function boot()
 }
 ```
 
-### 3. Utiliser la stratégie
+### 3. Use the strategy
 
 ```php
-// Modifier le ConflictResolver pour supporter les stratégies custom
-// Dans config
+// In config
 'per_resource' => [
-    'tasks' => 'priority', // Votre stratégie custom
+    'tasks' => 'priority', // Your custom strategy
 ],
 ```
 
@@ -440,106 +439,105 @@ public function boot()
 
 ## 🐛 Debugging
 
-### Écouter les événements de conflit
+### Listen to conflict events
 
 ```php
 use Techparse\OfflineSync\Events\ConflictDetected;
 
 Event::listen(ConflictDetected::class, function ($event) {
-    Log::warning('Conflit détecté', [
-        'resource' => $event->conflict['resource'],
+    Log::warning('Conflict detected', [
+        'resource'    => $event->conflict['resource'],
         'resource_id' => $event->conflict['resource_id'],
-        'local' => $event->conflict['local_data'],
-        'remote' => $event->conflict['remote_data'],
+        'local'       => $event->conflict['local_data'],
+        'remote'      => $event->conflict['remote_data'],
     ]);
 });
 ```
 
-### Logger les résolutions
+### Log resolutions
 
 ```php
-// Dans ConflictResolver
+// In ConflictResolver
 $result = $strategy->resolve($conflict);
 
-Log::info('Conflit résolu', [
+Log::info('Conflict resolved', [
     'strategy' => $strategy->name(),
-    'winner' => $result['winner'],
+    'winner'   => $result['winner'],
     'resource' => $conflict['resource'],
 ]);
 ```
 
-### Afficher dans l'UI
+### Display in the UI
 
 ```php
-// Récupérer les conflits après sync
+// Get conflicts after sync
 $result = OfflineSync::sync(['tasks']);
 
 if (!empty($result['conflicts'])) {
     foreach ($result['conflicts'] as $conflict) {
-        // Afficher un message à l'utilisateur
-        session()->flash('warning', "Conflit sur {$conflict['resource']}");
+        session()->flash('warning', "Conflict on {$conflict['resource']}");
     }
 }
 ```
 
 ---
 
-## 📊 Tableau Comparatif
+## 📊 Comparison Table
 
-| Stratégie | Préserve Local | Préserve Serveur | Complexité | Cas d'Usage |
-|-----------|----------------|------------------|------------|-------------|
-| **server_wins** | ❌ | ✅ | ⭐ Simple | Données critiques |
-| **client_wins** | ✅ | ❌ | ⭐ Simple | Préférences perso |
-| **last_write_wins** | ⚖️ Selon timestamp | ⚖️ Selon timestamp | ⭐⭐ Moyen | Collaboratif |
-| **merge** | ✅ Partiel | ✅ Partiel | ⭐⭐⭐ Complexe | Fiches complètes |
+| Strategy | Preserves Local | Preserves Server | Complexity | Use Case |
+|----------|-----------------|------------------|------------|----------|
+| **server_wins** | ❌ | ✅ | ⭐ Simple | Critical data |
+| **client_wins** | ✅ | ❌ | ⭐ Simple | Personal preferences |
+| **last_write_wins** | ⚖️ By timestamp | ⚖️ By timestamp | ⭐⭐ Medium | Collaborative |
+| **merge** | ✅ Partial | ✅ Partial | ⭐⭐⭐ Complex | Rich records |
 
 ---
 
-## 🎯 Recommandations
+## 🎯 Recommendations
 
-### Par type d'application
+### By app type
 
-| Type d'App | Recommandation |
-|------------|----------------|
-| **Notes personnelles** | `client_wins` partout |
-| **E-commerce** | `server_wins` (prix, stock), `merge` (produits) |
+| App Type | Recommendation |
+|----------|----------------|
+| **Personal notes** | `client_wins` everywhere |
+| **E-commerce** | `server_wins` (prices, stock), `merge` (products) |
 | **CRM** | `last_write_wins` (contacts), `server_wins` (quotas) |
-| **Gestion de tâches** | `last_write_wins` par défaut |
-| **Inventaire** | `server_wins` partout |
+| **Task management** | `last_write_wins` by default |
+| **Inventory** | `server_wins` everywhere |
 
 ### Best Practices
 
-1. ✅ **Utiliser `last_write_wins` par défaut** - Bon compromis
-2. ✅ **`server_wins` pour les données critiques** - Finances, stock
-3. ✅ **`client_wins` pour les préférences** - UI, paramètres
-4. ✅ **`merge` avec précaution** - Vérifier la logique métier
-5. ✅ **Logger tous les conflits** - Pour analyse et debug
-6. ✅ **Tester avec des timestamps proches** - Cas limite important
+1. ✅ **Use `last_write_wins` as default** — good all-round compromise
+2. ✅ **`server_wins` for critical data** — finances, stock
+3. ✅ **`client_wins` for preferences** — UI, settings
+4. ✅ **`merge` with care** — verify business logic
+5. ✅ **Log all conflicts** — for analysis and debugging
+6. ✅ **Test with close timestamps** — important edge case
 
 ---
 
 ## ❓ FAQ
 
-**Q : Que se passe-t-il si les timestamps sont égaux ?**
-R : `last_write_wins` favorise le serveur par défaut.
+**Q: What happens if timestamps are equal?**
+A: `last_write_wins` favours the server by default.
 
-**Q : Peut-on combiner plusieurs stratégies ?**
-R : Oui, via une stratégie custom qui délègue selon les champs.
+**Q: Can multiple strategies be combined?**
+A: Yes, via a custom strategy that delegates per field.
 
-**Q : Comment éviter les conflits ?**
-R : Sync fréquente, UX optimiste, verrouillage optimiste.
+**Q: How to avoid conflicts?**
+A: Sync frequently, use optimistic UI, apply optimistic locking.
 
-**Q : Les conflits bloquent-ils la sync ?**
-R : Non, les autres items continuent. Les conflits sont reportés.
+**Q: Do conflicts block the sync?**
+A: No, other items continue. Conflicts are reported but do not halt processing.
 
 ---
 
 ## 📞 Support
 
-Questions sur les conflits ?
-- 📧 Email : support@techparse.fr
-- 📖 Documentation : https://docs.techparse.fr/offline-sync
+Questions about conflicts?
+- 📧 Email: offlinessync@techparse.fr
+- 📖 Documentation: https://docs.offlinesync.techparse.fr
 
 ---
 
-**Maîtrisez les conflits !** 🎯
+**Master your conflicts!** 🎯

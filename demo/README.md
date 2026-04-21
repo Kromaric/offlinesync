@@ -284,7 +284,7 @@ curl -X POST http://localhost:8000/api/tasks \
 ## 📞 Support
 
 Questions sur la démo ?
-- 📧 Email : demo@techparse.fr
+- 📧 Email : offlinessync@techparse.fr
 - 📖 Docs : Voir ../docs/
 
 ---
