@@ -225,6 +225,9 @@ jobs:
           echo "Running migrations..."
           \$PHP artisan migrate --force
 
+          echo "Seeding database (skipped if already seeded)..."
+          \$PHP artisan db:seed --force
+
           echo "Building caches..."
           \$PHP artisan optimize:clear
           \$PHP artisan optimize
