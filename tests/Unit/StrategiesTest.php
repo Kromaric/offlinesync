@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\OfflineSync\Tests\Unit;
+namespace Techparse\OfflineSync\Tests\Unit;
 
-use VendorName\OfflineSync\Tests\TestCase;
-use VendorName\OfflineSync\Strategies\ServerWinsStrategy;
-use VendorName\OfflineSync\Strategies\ClientWinsStrategy;
-use VendorName\OfflineSync\Strategies\LastWriteWinsStrategy;
-use VendorName\OfflineSync\Strategies\MergeStrategy;
+use Techparse\OfflineSync\Tests\TestCase;
+use Techparse\OfflineSync\Strategies\ServerWinsStrategy;
+use Techparse\OfflineSync\Strategies\ClientWinsStrategy;
+use Techparse\OfflineSync\Strategies\LastWriteWinsStrategy;
+use Techparse\OfflineSync\Strategies\MergeStrategy;
 
 class StrategiesTest extends TestCase
 {

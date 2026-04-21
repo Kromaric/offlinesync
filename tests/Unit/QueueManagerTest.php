@@ -1,10 +1,10 @@
 <?php
 
-namespace VendorName\OfflineSync\Tests\Unit;
+namespace Techparse\OfflineSync\Tests\Unit;
 
-use VendorName\OfflineSync\Tests\TestCase;
-use VendorName\OfflineSync\QueueManager;
-use VendorName\OfflineSync\Models\SyncQueueItem;
+use Techparse\OfflineSync\Tests\TestCase;
+use Techparse\OfflineSync\QueueManager;
+use Techparse\OfflineSync\Models\SyncQueueItem;
 
 class QueueManagerTest extends TestCase
 {

@@ -13,25 +13,25 @@ return new class extends Migration
             
             $table->timestamp('synced_at');
             
-            // Direction de la sync
+            // Sync direction
             $table->enum('direction', ['push', 'pull', 'bidirectional']);
-            
-            // Métriques
+
+            // Metrics
             $table->integer('items_count')->default(0);
             $table->integer('synced_count')->default(0);
             $table->integer('failed_count')->default(0);
             $table->integer('conflicts_count')->default(0);
-            
-            // Durée
+
+            // Duration
             $table->integer('duration_ms')->nullable();
-            
-            // Statut global
+
+            // Overall status
             $table->boolean('success')->default(true);
-            
-            // Détails
+
+            // Details
             $table->json('details')->nullable();
-            
-            // Index
+
+            // Indexes
             $table->index(['synced_at', 'success']);
             $table->index('direction');
         });

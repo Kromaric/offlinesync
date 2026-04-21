@@ -10,7 +10,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/sync/ping', [SyncController::class, 'ping']);
 
-// Routes protégées
+// Protected routes
 Route::middleware('auth:sanctum')->group(function () {
 
     // Auth
@@ -20,7 +20,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Tasks CRUD
     Route::apiResource('tasks', TaskController::class);
 
-    // Actions supplémentaires sur tasks
+    // Additional task actions
     Route::post('/tasks/{id}/toggle', [TaskController::class, 'toggleComplete']);
     Route::get('/tasks-stats', [TaskController::class, 'stats']);
 

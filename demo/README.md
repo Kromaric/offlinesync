@@ -284,7 +284,7 @@ curl -X POST http://localhost:8000/api/tasks \
 ## 📞 Support
 
 Questions sur la démo ?
-- 📧 Email : demo@vendorname.com
+- 📧 Email : demo@techparse.fr
 - 📖 Docs : Voir ../docs/
 
 ---

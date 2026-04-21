@@ -1,80 +1,259 @@
 name: Deploy → offlinesync.techparse.fr
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Server structure :
+#
+#   $DEPLOY_PATH/
+#   ├── releases/
+#   │   ├── 20260421_143022/   ← active release
+#   │   ├── 20260419_091500/   ← previous release (instant rollback)
+#   │   └── ...                ← 5 releases kept
+#   ├── shared/
+#   │   ├── .env               ← shared between all releases
+#   │   └── storage/           ← logs, sessions, cache...
+#   └── current -> releases/20260421_143022   ← active symlink
+#
+# cPanel document root : $DEPLOY_PATH/current/demo/public
+#
+# Required GitHub secrets :
+#   SSH_PRIVATE_KEY, SSH_HOST, SSH_USER, SSH_PORT
+#   DEPLOY_PATH    ← e.g. /home/techpars/offlinesync
+#   APP_URL        ← https://offlinesync.techparse.fr
+#   DB_DATABASE, DB_USERNAME, DB_PASSWORD
+# ─────────────────────────────────────────────────────────────────────────────
+
 on:
   push:
     branches: [main]
-  workflow_dispatch:   # déclenchement manuel possible depuis GitHub
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Deploy to production
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 1 — Tests
+  # ───────────────────────────────────────────────────────────────────────────
+  test:
+    name: Tests & Validation
     runs-on: ubuntu-latest
 
     steps:
-      # ── 1. Checkout (pour vérifier que le code est correct) ─────────────────
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── 2. Vérifier la syntaxe PHP ──────────────────────────────────────────
-      - name: Setup PHP
+      - name: Setup PHP 8.3
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          tools: composer:v2
+          extensions: mbstring, pdo, pdo_sqlite, pdo_mysql, xml, curl, zip
+          coverage: none
 
-      - name: Validate composer.json (plugin)
+      - name: Cache Composer (plugin)
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-plugin-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-plugin-${{ runner.os }}-
+
+      - name: Install plugin dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Validate plugin composer.json
         run: composer validate --no-check-publish
 
-      - name: Validate composer.json (demo)
+      - name: Validate demo composer.json
         run: composer validate --no-check-publish
         working-directory: demo
 
-      # ── 3. Déploiement sur le serveur via SSH ────────────────────────────────
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Run plugin tests
+        run: vendor/bin/phpunit --stop-on-failure
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 2 — Build & Deploy
+  # ───────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    needs: test
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          php-version: '8.3'
+          extensions: mbstring, pdo, pdo_sqlite, pdo_mysql, xml, curl, zip
+          coverage: none
 
-      - name: Add server to known_hosts
+      - name: Cache Composer (demo prod)
+        uses: actions/cache@v4
+        with:
+          path: demo/vendor
+          key: composer-demo-prod-${{ runner.os }}-${{ hashFiles('demo/composer.lock') }}
+          restore-keys: composer-demo-prod-${{ runner.os }}-
+
+      - name: Install demo dependencies (no-dev)
+        working-directory: demo
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+      - name: Build deployment archive
         run: |
-          ssh-keyscan -p ${{ secrets.SSH_PORT || 22 }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          tar --exclude='.git' \
+              --exclude='.github' \
+              --exclude='demo/.env' \
+              --exclude='demo/.env.*' \
+              --exclude='demo/storage/framework' \
+              --exclude='demo/storage/logs' \
+              --exclude='demo/storage/app' \
+              --exclude='demo/bootstrap/cache' \
+              --exclude='demo/node_modules' \
+              --exclude='demo/public/hot' \
+              --exclude='tests' \
+              --exclude='native' \
+              --exclude='*.log' \
+              -czf /tmp/deploy.tar.gz .
 
-      - name: Deploy
+      - name: Setup SSH key
         env:
-          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT || 22 }}
-          REMOTE_DIR: ${{ secrets.REMOTE_DIR }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
-          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" bash << 'ENDSSH'
-            set -e
-            echo "── Pull du code ──────────────────────────────────────────"
-            cd $REMOTE_DIR
-            git pull origin main
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          PORT="${SSH_PORT:-22}"
+          ssh-keyscan -p "$PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          chmod 644 ~/.ssh/known_hosts
 
-            echo "── Dépendances ───────────────────────────────────────────"
-            cd demo
-            composer install --no-dev --optimize-autoloader --no-interaction
+      - name: Upload archive to server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          PORT="${SSH_PORT:-22}"
+          scp -P "$PORT" -i ~/.ssh/id_deploy /tmp/deploy.tar.gz \
+            $SSH_USER@$SSH_HOST:~/deploy.tar.gz
 
-            echo "── Cache Laravel ─────────────────────────────────────────"
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
+      - name: Deploy on server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          APP_URL: ${{ secrets.APP_URL }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          PORT="${SSH_PORT:-22}"
 
-            echo "── Migrations ────────────────────────────────────────────"
-            php artisan migrate --force
+          ssh -p "$PORT" -i ~/.ssh/id_deploy -o StrictHostKeyChecking=yes \
+            $SSH_USER@$SSH_HOST /bin/bash << SSHEOF
+          set -e
 
-            echo "── Permissions storage ───────────────────────────────────"
-            chmod -R 775 storage bootstrap/cache
+          PHP=\$(which php)
+          RELEASE_NAME=\$(date +%Y%m%d_%H%M%S)
+          RELEASE_PATH=$DEPLOY_PATH/releases/\$RELEASE_NAME
 
-            echo "✅ Déploiement terminé !"
-          ENDSSH
+          # ── Prepare shared directories (first deploy only) ────────────────────
+          mkdir -p $DEPLOY_PATH/releases
+          mkdir -p $DEPLOY_PATH/shared/storage/app/public
+          mkdir -p $DEPLOY_PATH/shared/storage/framework/{sessions,views,cache/data}
+          mkdir -p $DEPLOY_PATH/shared/storage/logs
+          touch $DEPLOY_PATH/shared/storage/logs/laravel.log
 
-      # ── 4. Notification (optionnel) ──────────────────────────────────────────
-      - name: Notify success
+          # ── Extract new release ───────────────────────────────────────────────
+          echo "Extracting release \$RELEASE_NAME..."
+          mkdir -p \$RELEASE_PATH
+          tar -xzf ~/deploy.tar.gz -C \$RELEASE_PATH
+          rm -f ~/deploy.tar.gz
+          mkdir -p \$RELEASE_PATH/demo/bootstrap/cache
+
+          # ── Write shared .env from secrets ────────────────────────────────────
+          cat > $DEPLOY_PATH/shared/.env << ENVEOF
+          APP_NAME="offlineSync Demo"
+          APP_ENV=production
+          APP_KEY=
+          APP_DEBUG=false
+          APP_URL=$APP_URL
+
+          SYNC_API_URL=$APP_URL
+          SYNC_AUTH_METHOD=bearer
+          SYNC_REQUIRE_HTTPS=true
+          SYNC_ENCRYPT_QUEUE=false
+
+          LOG_CHANNEL=single
+          LOG_LEVEL=error
+
+          DB_CONNECTION=mysql
+          DB_HOST=localhost
+          DB_PORT=3306
+          DB_DATABASE=$DB_DATABASE
+          DB_USERNAME=$DB_USERNAME
+          DB_PASSWORD=$DB_PASSWORD
+
+          SESSION_DRIVER=database
+          SESSION_LIFETIME=120
+          BROADCAST_CONNECTION=log
+          FILESYSTEM_DISK=local
+          QUEUE_CONNECTION=database
+          CACHE_STORE=database
+          ENVEOF
+
+          # ── Link shared files into release ────────────────────────────────────
+          ln -sf $DEPLOY_PATH/shared/.env \$RELEASE_PATH/demo/.env
+          rm -rf \$RELEASE_PATH/demo/storage
+          ln -sf $DEPLOY_PATH/shared/storage \$RELEASE_PATH/demo/storage
+
+          # ── Permissions ───────────────────────────────────────────────────────
+          chmod -R 775 $DEPLOY_PATH/shared/storage \$RELEASE_PATH/demo/bootstrap/cache
+          chmod 664 $DEPLOY_PATH/shared/storage/logs/laravel.log
+
+          # ── Laravel setup ─────────────────────────────────────────────────────
+          cd \$RELEASE_PATH/demo
+
+          echo "Generating APP_KEY..."
+          \$PHP artisan key:generate --force
+
+          echo "Running migrations..."
+          \$PHP artisan migrate --force
+
+          echo "Building caches..."
+          \$PHP artisan optimize:clear
+          \$PHP artisan optimize
+
+          # ── Atomic activation ─────────────────────────────────────────────────
+          echo "Activating release \$RELEASE_NAME..."
+          rm -rf $DEPLOY_PATH/current
+          ln -sfn \$RELEASE_PATH $DEPLOY_PATH/current
+
+          # ── Restart queue workers (if running) ────────────────────────────────
+          \$PHP artisan queue:restart || true
+
+          # ── Keep only last 5 releases ─────────────────────────────────────────
+          echo "Cleaning up old releases..."
+          ls -dt $DEPLOY_PATH/releases/*/ | tail -n +6 | xargs -r rm -rf
+
+          echo "✅ Release \$RELEASE_NAME deployed successfully!"
+          echo "Active releases:"
+          ls -dt $DEPLOY_PATH/releases/*/ | xargs -I{} basename {}
+          SSHEOF
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/id_deploy
+
+      - name: Success
         if: success()
-        run: echo "✅ https://offlinesync.techparse.fr est à jour"
+        run: echo "✅ https://offlinesync.techparse.fr is live"
 
-      - name: Notify failure
+      - name: Failure
         if: failure()
-        run: echo "❌ Le déploiement a échoué — vérifier les logs CI"
+        run: echo "❌ Deployment failed — check the logs above"
