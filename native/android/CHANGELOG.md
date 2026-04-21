@@ -1,33 +1,33 @@
 # Changelog - Android Native Code
 
-## v1.0.0 (2025-02-06)
+## v1.0.0
 
 ### ✨ Features
 
 #### OfflineSyncFunctions.kt
-- ✅ `queueAction()` - Queue des opérations pour sync
-- ✅ `runSync()` - Synchronisation manuelle
-- ✅ `getStatus()` - Statut de la queue et connexion
-- ✅ `startMonitoring()` - Démarrage du monitoring
-- ✅ `stopMonitoring()` - Arrêt du monitoring
-- ✅ `schedulePeriodicSync()` - Planification sync périodique
-- ✅ `cancelPeriodicSync()` - Annulation sync périodique
+- ✅ `queueAction()` — Queue operations for sync
+- ✅ `runSync()` — Manual sync trigger
+- ✅ `getStatus()` — Queue and connectivity status
+- ✅ `startMonitoring()` — Start connectivity monitoring
+- ✅ `stopMonitoring()` — Stop connectivity monitoring
+- ✅ `schedulePeriodicSync()` — Schedule periodic background sync
+- ✅ `cancelPeriodicSync()` — Cancel periodic sync
 
 #### ConnectivityMonitor.kt
-- ✅ Détection WiFi / Données mobiles
-- ✅ Monitoring temps réel des changements de connexion
-- ✅ Informations détaillées (bande passante, type)
-- ✅ Détection des connexions mesurées (limited data)
-- ✅ Support Android 7.0+ (API 24+)
+- ✅ WiFi / Mobile data detection
+- ✅ Real-time connection change monitoring
+- ✅ Detailed connection info (bandwidth, type)
+- ✅ Metered connection detection (limited data)
+- ✅ Android 7.0+ support (API 24+)
 
 #### BackgroundSyncWorker.kt
-- ✅ Synchronisation en arrière-plan avec WorkManager
-- ✅ Sync périodique configurable
-- ✅ Contraintes réseau (WiFi only, connected, etc.)
-- ✅ Contrainte batterie (ne pas drainer)
-- ✅ Retry automatique avec backoff exponentiel
-- ✅ Persistance après reboot
-- ✅ Respect du Doze mode et App Standby
+- ✅ Background sync with WorkManager
+- ✅ Configurable periodic sync
+- ✅ Network constraints (WiFi only, connected, etc.)
+- ✅ Battery constraint (avoid draining)
+- ✅ Automatic retry with exponential backoff
+- ✅ Persistence across reboots
+- ✅ Respects Doze mode and App Standby
 
 ### 📦 Dependencies
 - AndroidX Core KTX 1.12.0
@@ -47,19 +47,13 @@
 - ACCESS_WIFI_STATE
 - CHANGE_NETWORK_STATE
 
-### 📝 Documentation
-- README.md avec exemples complets
-- Fichier d'exemples (OfflineSyncExamples.kt)
-- ProGuard rules pour release
-- Configuration Gradle
-
 ### ⚠️ Known Issues
-- `callPhpFunction()` nécessite implémentation du bridge NativePHP réel
-- Tests unitaires à ajouter
+- `callPhpFunction()` requires the actual NativePHP bridge implementation
+- Unit tests to be added
 
 ### 🔜 Planned for v1.1.0
-- Tests unitaires avec JUnit
-- Tests instrumentés avec Espresso
-- Support des notifications de sync
-- Statistiques de sync détaillées
-- Mode debug avec logs verbeux
+- Unit tests with JUnit
+- Instrumented tests with Espresso
+- Sync notifications
+- Detailed sync statistics
+- Verbose debug logging mode

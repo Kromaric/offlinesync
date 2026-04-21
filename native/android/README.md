@@ -1,62 +1,66 @@
-# OfflineSync - Code Natif Android
+# OfflineSync - Android Native Code
 
-Ce dossier contient le code natif Android (Kotlin) pour le plugin OfflineSync.
+This directory contains the Android (Kotlin) native code for the OfflineSync plugin.
 
 ## 📁 Structure
 
 ```
 android/
-├── build.gradle                    # Configuration Gradle
+├── build.gradle                    # Gradle configuration
 ├── src/
 │   └── main/
 │       ├── AndroidManifest.xml     # Permissions
 │       └── kotlin/
-│           └── com/vendor/offlinesync/
-│               ├── OfflineSyncFunctions.kt      # Bridge functions principales
-│               ├── ConnectivityMonitor.kt       # Monitoring de connexion
-│               └── BackgroundSyncWorker.kt      # Sync en arrière-plan
+│           └── com/techparse/offlinesync/
+│               ├── OfflineSyncFunctions.kt      # Main bridge functions
+│               ├── ConnectivityMonitor.kt       # Connectivity monitoring
+│               └── BackgroundSyncWorker.kt      # Background sync worker
 ```
 
-## 🔧 Composants
+## 🔧 Components
 
 ### OfflineSyncFunctions.kt
-Bridge entre le code PHP/Laravel et Android. Expose les fonctions :
-- `queueAction()` - Ajouter une action à la queue
-- `runSync()` - Lancer une synchronisation
-- `getStatus()` - Obtenir le statut
-- `startMonitoring()` - Démarrer le monitoring
-- `stopMonitoring()` - Arrêter le monitoring
-- `schedulePeriodicSync()` - Planifier une sync périodique
-- `cancelPeriodicSync()` - Annuler la sync périodique
+
+Bridge between PHP/Laravel and Android. Exposes:
+- `queueAction()` — Queue an operation for sync
+- `runSync()` — Trigger a manual sync
+- `getStatus()` — Get current sync status
+- `startMonitoring()` — Start connectivity monitoring
+- `stopMonitoring()` — Stop connectivity monitoring
+- `schedulePeriodicSync()` — Schedule periodic background sync
+- `cancelPeriodicSync()` — Cancel periodic sync
 
 ### ConnectivityMonitor.kt
-Détection de la connectivité réseau :
-- Détecte WiFi / Données mobiles
-- Écoute les changements de connexion
-- Fournit des infos détaillées (bande passante, etc.)
-- Détecte les connexions mesurées (limited data)
+
+Network connectivity detection:
+- Detects WiFi / Mobile data
+- Listens for connection changes in real time
+- Provides detailed connection info (bandwidth, type)
+- Detects metered connections (limited data)
 
 ### BackgroundSyncWorker.kt
-Synchronisation en arrière-plan avec WorkManager :
-- Sync périodique même quand l'app est fermée
-- Contraintes configurables (WiFi only, batterie, etc.)
-- Retry automatique en cas d'échec
-- Politique de backoff exponentiel
 
-## 📦 Dépendances
+Background synchronization using WorkManager:
+- Periodic sync even when the app is closed
+- Configurable constraints (WiFi only, battery, etc.)
+- Automatic retry on failure
+- Exponential backoff policy
+- Persists across device reboots
+
+## 📦 Dependencies
 
 ```gradle
-// WorkManager pour background sync
+// WorkManager for background sync
 implementation 'androidx.work:work-runtime-ktx:2.9.0'
 
-// OkHttp pour requêtes HTTP
+// OkHttp for HTTP requests
 implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 
-// Coroutines (optionnel)
+// Coroutines
 implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
 ```
 
-## 🔐 Permissions requises
+## 🔐 Required Permissions
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
@@ -65,35 +69,35 @@ implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
 <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
 ```
 
-## 🚀 Utilisation
+## 🚀 Usage
 
-### Depuis le code PHP/NativePHP
+### From PHP/NativePHP
 
-Les fonctions sont appelées automatiquement via le bridge NativePHP :
+Functions are called automatically via the NativePHP bridge:
 
 ```php
-// Côté PHP
+// PHP side
 OfflineSync::queue($model, 'create');
 ```
 
-Le bridge NativePHP appelle automatiquement :
+The NativePHP bridge automatically calls:
 
 ```kotlin
-// Côté Android
+// Android side
 OfflineSyncFunctions.queueAction(params)
 ```
 
-### Configuration de la sync périodique
+### Schedule periodic sync
 
 ```php
-// Activer la sync toutes les 30 minutes, WiFi uniquement
+// Sync every 30 minutes, WiFi only
 NativeBridge::call('OfflineSync.schedulePeriodicSync', [
     'interval_minutes' => 30,
-    'require_wifi' => true
+    'require_wifi' => true,
 ]);
 ```
 
-## 📱 Versions supportées
+## 📱 Supported Versions
 
 - **Min SDK**: 24 (Android 7.0 Nougat)
 - **Target SDK**: 34 (Android 14)
@@ -101,27 +105,27 @@ NativeBridge::call('OfflineSync.schedulePeriodicSync', [
 
 ## ⚡ WorkManager
 
-Le plugin utilise WorkManager pour garantir :
-- Exécution même si l'app est tuée
-- Respect des contraintes (WiFi, batterie, etc.)
-- Retry automatique avec backoff
-- Persistance des tâches après reboot
+The plugin uses WorkManager to guarantee:
+- Execution even if the app is killed
+- Respect for constraints (WiFi, battery, etc.)
+- Automatic retry with backoff
+- Task persistence after reboot
 
-## 🔄 Flux de synchronisation
+## 🔄 Sync Flow
 
 ```
-1. Changement de données → Queue locale (SQLite)
-2. ConnectivityMonitor détecte connexion
-3. BackgroundSyncWorker déclenché
-4. OfflineSyncFunctions.runSync() appelé
-5. Bridge → Code PHP → API Laravel
-6. Résolution des conflits
-7. Mise à jour locale
+1. Data change → Local queue (SQLite)
+2. ConnectivityMonitor detects connection
+3. BackgroundSyncWorker triggered
+4. OfflineSyncFunctions.runSync() called
+5. Bridge → PHP code → Laravel API
+6. Conflict resolution
+7. Local update
 ```
 
-## 🧪 Tests
+## 🧪 Testing
 
-Pour tester la connectivité :
+Test connectivity:
 
 ```kotlin
 val monitor = ConnectivityMonitor(context)
@@ -130,7 +134,7 @@ println("Type: ${monitor.getConnectionType()}")
 println("Info: ${monitor.getConnectionInfo()}")
 ```
 
-Pour tester le background sync :
+Test background sync:
 
 ```kotlin
 val worker = BackgroundSyncWorker.getInstance(context)
@@ -139,7 +143,7 @@ worker.scheduleSyncNow()
 
 ## 🐛 Debugging
 
-Activer les logs WorkManager :
+Enable WorkManager logs:
 
 ```kotlin
 WorkManager.getInstance(context).apply {
@@ -151,11 +155,11 @@ WorkManager.getInstance(context).apply {
 
 ## ⚠️ Important
 
-Le fichier `OfflineSyncFunctions.kt` contient une méthode `callPhpFunction()` qui doit être implémentée selon l'API réelle du bridge NativePHP. Actuellement, elle lance une `NotImplementedError`.
+`OfflineSyncFunctions.kt` contains a `callPhpFunction()` method that must be implemented against the actual NativePHP bridge API. It currently throws a `NotImplementedError`.
 
 ## 📝 Notes
 
-- Les Workers sont persistés même après reboot du device
-- La sync périodique s'adapte aux contraintes système (Doze mode, App Standby)
-- En WiFi metered, le système peut retarder la sync
-- Les contraintes de batterie sont respectées automatiquement
+- Workers are persisted across device reboots
+- Periodic sync adapts to system constraints (Doze mode, App Standby)
+- On metered WiFi the system may delay sync
+- Battery constraints are respected automatically
