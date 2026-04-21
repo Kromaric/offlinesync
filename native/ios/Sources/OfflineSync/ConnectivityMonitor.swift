@@ -6,7 +6,7 @@ import Network
 public class ConnectivityMonitor {
     
     private let monitor = NWPathMonitor()
-    private let queue = DispatchQueue(label: "com.vendor.offlinesync.connectivity")
+    private let queue = DispatchQueue(label: "com.techparse.offlinesync.connectivity")
     private var onConnectivityChanged: ((Bool) -> Void)?
     private var currentPath: NWPath?
     

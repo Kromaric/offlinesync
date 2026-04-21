@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace 'com.vendor.offlinesync'
+    namespace 'com.techparse.offlinesync'
     compileSdk 34
 
     defaultConfig {

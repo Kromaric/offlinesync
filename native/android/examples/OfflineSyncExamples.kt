@@ -1,9 +1,9 @@
-package com.vendor.offlinesync.examples
+package com.techparse.offlinesync.examples
 
 import android.content.Context
-import com.vendor.offlinesync.OfflineSyncFunctions
-import com.vendor.offlinesync.ConnectivityMonitor
-import com.vendor.offlinesync.BackgroundSyncWorker
+import com.techparse.offlinesync.OfflineSyncFunctions
+import com.techparse.offlinesync.ConnectivityMonitor
+import com.techparse.offlinesync.BackgroundSyncWorker
 import org.json.JSONObject
 import org.json.JSONArray
 

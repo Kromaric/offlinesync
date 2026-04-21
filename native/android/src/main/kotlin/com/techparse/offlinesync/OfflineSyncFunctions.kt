@@ -1,4 +1,4 @@
-package com.vendor.offlinesync
+package com.techparse.offlinesync
 
 import android.content.Context
 import org.json.JSONArray

@@ -397,7 +397,7 @@ monitor.pathUpdateHandler = { path in
 import BackgroundTasks
 
 BGTaskScheduler.shared.register(
-    forTaskWithIdentifier: "com.vendor.offlinesync.sync",
+    forTaskWithIdentifier: "com.techparse.offlinesync.sync",
     using: nil
 ) { task in
     self.handleBackgroundSync(task: task as! BGAppRefreshTask)
@@ -428,7 +428,7 @@ BGTaskScheduler.shared.register(
 ```swift
 import os.log
 
-let logger = OSLog(subsystem: "com.vendor.offlinesync", category: "sync")
+let logger = OSLog(subsystem: "com.techparse.offlinesync", category: "sync")
 
 os_log("Sync started", log: logger, type: .info)
 os_log("Error: %@", log: logger, type: .error, error.localizedDescription)
@@ -443,7 +443,7 @@ os_log("Error: %@", log: logger, type: .error, error.localizedDescription)
 
 ```bash
 # Simuler une tâche de fond
-e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.vendor.offlinesync.sync"]
+e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.techparse.offlinesync.sync"]
 ```
 
 ---

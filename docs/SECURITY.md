@@ -19,31 +19,38 @@ Best practices de sécurité pour OfflineSync en production.
 
 ## 🔐 Authentification
 
-### Laravel Sanctum (Recommandé)
+Le plugin est **auth-agnostic** : il ne gère pas les tokens ni les credentials. C'est votre application qui est responsable de l'authentification. Le plugin se contente de transmettre les headers que vous lui injectez via `offline-sync.security.headers`.
 
-**Avantages :**
-- ✅ Intégré à Laravel
-- ✅ Tokens révocables
-- ✅ Simple à implémenter
-- ✅ Support multi-devices
-
-**Configuration :**
-
-```env
-SYNC_AUTH_METHOD=bearer
-```
-
-**Génération de token :**
+### Pattern recommandé (AppServiceProvider)
 
 ```php
-// Lors du login
-$user = User::find(1);
-$token = $user->createToken('mobile-app', ['sync'])->plainTextToken;
+// app/Providers/AppServiceProvider.php
+use Illuminate\Http\Request;
 
-// Stocker le token dans l'app mobile de manière sécurisée
+public function boot(): void
+{
+    $token = $this->app->make(Request::class)->bearerToken();
+
+    if ($token) {
+        config(['offline-sync.security.headers' => [
+            'Authorization' => 'Bearer ' . $token,
+        ]]);
+    }
+}
 ```
 
-**Révocation :**
+Ce pattern fonctionne avec n'importe quel système d'auth : **Laravel Sanctum**, **Passport**, **API Keys**, etc.
+
+### Génération de token (Laravel Sanctum)
+
+```php
+// Dans votre AuthController (login)
+$token = $user->createToken('mobile-app', ['sync'])->plainTextToken;
+
+return response()->json(['token' => $token]);
+```
+
+### Révocation de tokens
 
 ```php
 // Révoquer tous les tokens de l'utilisateur
@@ -53,77 +60,11 @@ $user->tokens()->delete();
 $user->tokens()->where('name', 'mobile-app')->delete();
 ```
 
-### API Key (Alternative)
-
-Pour les cas simples sans authentification utilisateur :
-
-```env
-SYNC_AUTH_METHOD=api_key
-SYNC_API_TOKEN=VOTRE_CLE_SECRETE_LONGUE_ET_ALEATOIRE
-```
-
-**⚠️ Important :**
-- Utiliser un token long (min 32 caractères)
-- Générer avec `openssl_random_pseudo_bytes()`
-- Ne JAMAIS commiter dans Git
-- Rotation régulière recommandée
-
----
-
-## 🔐 Chiffrement
-
-### Chiffrement de la queue locale
-
-Activé par défaut pour protéger les données sensibles :
-
-```env
-SYNC_ENCRYPT_QUEUE=true
-```
-
-**Ce qui est chiffré :**
-- ✅ Payload des items en queue
-- ✅ Données utilisateur sensibles
-- ✅ Tokens stockés localement
-
-**Algorithme :** AES-256-CBC (via Laravel Crypt)
-
-**Key management :**
+### En cas de compromission
 
 ```php
-// La clé APP_KEY de Laravel est utilisée
-APP_KEY=base64:VOTRE_CLE_APPLICATION_32_CARACTERES
-```
-
-**⚠️ Sécurité de APP_KEY :**
-```bash
-# Générer une nouvelle clé
-php artisan key:generate
-
-# Vérifier la clé
-php artisan tinker
->>> config('app.key')
-```
-
-### Chiffrement du token utilisateur
-
-```env
-SYNC_TOKEN_STORAGE=encrypted
-```
-
-**Emplacement :** `storage/app/sync_token.enc`
-
-**Code :**
-
-```php
-use Illuminate\Support\Facades\Crypt;
-
-// Stockage
-$encrypted = Crypt::encryptString($token);
-file_put_contents(storage_path('app/sync_token.enc'), $encrypted);
-
-// Récupération
-$encrypted = file_get_contents(storage_path('app/sync_token.enc'));
-$token = Crypt::decryptString($encrypted);
+// Révoquer immédiatement TOUS les tokens
+DB::table('personal_access_tokens')->truncate();
 ```
 
 ---
@@ -465,7 +406,6 @@ if ($hour >= 2 && $hour <= 5) {
 
 - [ ] ✅ HTTPS activé et certificat valide
 - [ ] ✅ `SYNC_REQUIRE_HTTPS=true` en production
-- [ ] ✅ `SYNC_ENCRYPT_QUEUE=true`
 - [ ] ✅ APP_KEY généré et sécurisé
 - [ ] ✅ Tokens Sanctum avec expiration
 - [ ] ✅ Rate limiting configuré
@@ -476,7 +416,7 @@ if ($hour >= 2 && $hour <= 5) {
 - [ ] ✅ Firewall configuré (UFW/iptables)
 - [ ] ✅ Fail2ban installé (optionnel)
 - [ ] ✅ Backup de la base de données
-- [ ] ✅ Plan de rotation des tokens
+- [ ] ✅ Plan de rotation des tokens Sanctum
 
 ### Configuration serveur
 
@@ -509,6 +449,7 @@ bantime = 3600
 ### En cas de compromission
 
 1. **Révoquer immédiatement tous les tokens**
+
 ```php
 DB::table('personal_access_tokens')->truncate();
 ```
@@ -534,7 +475,7 @@ grep "Sync failed" storage/logs/laravel.log | tail -100
 ### Top 10
 
 1. ✅ **HTTPS uniquement** en production
-2. ✅ **Chiffrement de la queue** activé
+2. ✅ **Auth injectée** via `security.headers` dans AppServiceProvider
 3. ✅ **Tokens Sanctum** avec révocation
 4. ✅ **Rate limiting** agressif
 5. ✅ **Validation stricte** de toutes les entrées

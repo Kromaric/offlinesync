@@ -538,9 +538,9 @@ OfflineSync::sync();
 
 ---
 
-### Q5 : Les données sync sont-elles chiffrées ?
+### Q5 : Les données sync sont-elles chiffrées en transit ?
 
-**R :** Oui, si `SYNC_ENCRYPT_QUEUE=true` (par défaut).
+**R :** Oui, via HTTPS (`SYNC_REQUIRE_HTTPS=true`). Le transport est chiffré TLS. Les données au repos dans la queue locale ne sont pas chiffrées par le plugin — c'est à votre app de gérer le chiffrement local si nécessaire.
 
 ---
 
@@ -624,9 +624,9 @@ echo "=== DIAGNOSTIC OFFLINESYNC ===\n\n";
 // 1. Configuration
 echo "Configuration:\n";
 echo "  API URL: " . config('offline-sync.api_url') . "\n";
-echo "  Auth: " . config('offline-sync.security.auth_method') . "\n";
 echo "  HTTPS: " . (config('offline-sync.security.require_https') ? 'Oui' : 'Non') . "\n";
-echo "  Encrypt: " . (config('offline-sync.security.encrypt_queue') ? 'Oui' : 'Non') . "\n\n";
+$headers = array_keys(config('offline-sync.security.headers', []));
+echo "  Headers: " . (count($headers) ? implode(', ', $headers) : 'aucun') . "\n\n";
 
 // 2. Queue
 echo "Queue:\n";
@@ -685,7 +685,7 @@ Lors d'une demande de support, incluez :
 
 - 📧 **Email** : support@techparse.fr
 - 📖 **Documentation** : https://docs.techparse.fr
-- 🐛 **Issues GitHub** : https://github.com/Kromaric/offline-sync/issues
+- 🐛 **Issues GitHub** : https://github.com/Kromaric/offlinesync/issues
 
 ### Temps de réponse
 
