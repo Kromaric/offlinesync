@@ -3,7 +3,6 @@
 namespace Techparse\OfflineSync;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Crypt;
 use Techparse\OfflineSync\Events\SyncStarted;
 use Techparse\OfflineSync\Events\SyncCompleted;
 use Techparse\OfflineSync\Events\SyncFailed;
@@ -28,7 +27,7 @@ class SyncEngine
     }
 
     /**
-     * Bidirectional synchronization
+     * Bidirectional synchronization (push then pull).
      */
     public function sync(?array $resources = null): array
     {
@@ -40,19 +39,13 @@ class SyncEngine
             $pullResult = $this->pull($resources ?? []);
 
             $result = [
-                'synced' => $pushResult['synced'] + $pullResult['synced'],
-                'failed' => $pushResult['failed'] + $pullResult['failed'],
+                'synced'    => $pushResult['synced'] + $pullResult['synced'],
+                'failed'    => $pushResult['failed'] + $pullResult['failed'],
                 'conflicts' => $pushResult['conflicts'] ?? 0,
             ];
 
-            $duration = (int)((microtime(true) - $startTime) * 1000);
-            event(new SyncCompleted(
-                $result['synced'],
-                $result['failed'],
-                $result['conflicts'],
-                $duration
-            ));
-
+            $duration = (int) ((microtime(true) - $startTime) * 1000);
+            event(new SyncCompleted($result['synced'], $result['failed'], $result['conflicts'], $duration));
             $this->logSync('bidirectional', $result, $duration);
 
             return $result;
@@ -68,62 +61,53 @@ class SyncEngine
     protected function validateApiUrlSecurity(): void
     {
         $apiUrl = config('offline-sync.api_url', '');
-        if (config('offline-sync.security.require_https', true) && !str_starts_with($apiUrl, 'https://')) {
+        if (config('offline-sync.security.require_https', true) && ! str_starts_with($apiUrl, 'https://')) {
             throw new \Exception('HTTPS is required for sync operations');
         }
     }
 
     /**
-     * Push: send local changes to the server
+     * Push: send pending local changes to the server.
      */
     public function push(?array $resources = null): array
     {
-        if (!$this->connectivity()->isOnline()) {
+        if (! $this->connectivity()->isOnline()) {
             throw new \Exception('No internet connection');
         }
 
         $this->validateApiUrlSecurity();
 
         $queueManager = app(QueueManager::class);
-        $pending = $resources 
-            ? collect($resources)->flatMap(fn($r) => $queueManager->getPending($r))
+        $pending = $resources
+            ? collect($resources)->flatMap(fn ($r) => $queueManager->getPending($r))
             : $queueManager->getPending();
 
         if ($pending->isEmpty()) {
             return ['synced' => 0, 'failed' => 0];
         }
 
-        $batchSize = config('offline-sync.performance.batch_size', 50);
-        $batches = $pending->chunk($batchSize);
-
-        $synced = 0;
-        $failed = 0;
+        $synced    = 0;
+        $failed    = 0;
         $conflicts = [];
 
-        foreach ($batches as $batch) {
-            $items = $batch->map(fn($item) => [
-                'resource' => $item->resource,
+        foreach ($pending->chunk(config('offline-sync.performance.batch_size', 50)) as $batch) {
+            $items = $batch->map(fn ($item) => [
+                'resource'    => $item->resource,
                 'resource_id' => $item->resource_id,
-                'operation' => $item->operation,
-                'data' => $item->payload,
-                'timestamp' => $item->created_at->toIso8601String(),
+                'operation'   => $item->operation,
+                'data'        => $item->payload,
+                'timestamp'   => $item->created_at->toIso8601String(),
             ])->toArray();
 
             try {
-                $response = $this->secureRequest('post', $this->getApiUrl('/sync/push'), [
-                    'items' => $items,
-                ]);
+                $response = $this->request('post', $this->apiUrl('/sync/push'), ['items' => $items]);
 
                 if ($response->successful()) {
-                    $result = $response->json();
-                    $synced += $result['synced'] ?? 0;
-                    $failed += $result['failed'] ?? 0;
+                    $result     = $response->json();
+                    $synced    += $result['synced'] ?? 0;
+                    $failed    += $result['failed'] ?? 0;
+                    $conflicts  = array_merge($conflicts, $result['conflicts'] ?? []);
 
-                    if (isset($result['conflicts'])) {
-                        $conflicts = array_merge($conflicts, $result['conflicts']);
-                    }
-
-                    // Mark items as synced
                     foreach ($batch as $item) {
                         $item->markAsSynced();
                         event(new ItemSynced($item));
@@ -131,7 +115,7 @@ class SyncEngine
                 } else {
                     $failed += $batch->count();
                     foreach ($batch as $item) {
-                        $item->markAsFailed('HTTP error: ' . $response->status());
+                        $item->markAsFailed('HTTP ' . $response->status());
                     }
                 }
             } catch (\Exception $e) {
@@ -142,19 +126,15 @@ class SyncEngine
             }
         }
 
-        return [
-            'synced' => $synced,
-            'failed' => $failed,
-            'conflicts' => $conflicts,
-        ];
+        return ['synced' => $synced, 'failed' => $failed, 'conflicts' => $conflicts];
     }
 
     /**
-     * Pull: retrieve changes from the server
+     * Pull: fetch remote changes and apply them locally.
      */
     public function pull(array $resources): array
     {
-        if (!$this->connectivity()->isOnline()) {
+        if (! $this->connectivity()->isOnline()) {
             throw new \Exception('No internet connection');
         }
 
@@ -162,25 +142,20 @@ class SyncEngine
 
         foreach ($resources as $resource) {
             try {
-                $response = $this->secureRequest('get', $this->getApiUrl("/sync/pull/{$resource}"), [
-                    'since' => $this->getLastPullTimestamp($resource),
+                $response = $this->request('get', $this->apiUrl("/sync/pull/{$resource}"), [
+                    'since' => $this->lastPullTimestamp($resource),
                     'limit' => config('offline-sync.performance.batch_size', 100),
                 ]);
 
                 if ($response->successful()) {
-                    $data = $response->json();
-                    $items = $data['data'] ?? [];
-
-                    foreach ($items as $item) {
+                    foreach ($response->json('data', []) as $item) {
                         $this->applyRemoteChange($resource, $item);
                         $synced++;
                     }
-
-                    $this->updateLastPullTimestamp($resource);
+                    $this->recordPullTimestamp($resource);
                 }
-            } catch (\Exception $e) {
-                // Log error but continue with other resources
-                continue;
+            } catch (\Exception) {
+                continue; // log error but keep syncing other resources
             }
         }
 
@@ -188,162 +163,101 @@ class SyncEngine
     }
 
     /**
-     * Get the synchronization status
+     * Return the current sync status.
      */
     public function getStatus(): array
     {
-        $queueManager = app(QueueManager::class);
-        $pending = $queueManager->getPending();
-
+        $pending = app(QueueManager::class)->getPending();
         $lastSync = SyncLog::orderBy('synced_at', 'desc')->first();
 
         return [
             'pending_count' => $pending->count(),
-            'last_sync' => $lastSync?->synced_at?->toIso8601String(),
-            'is_syncing' => false, // TODO: implement sync lock
-            'is_online' => $this->connectivity()->isOnline(),
+            'last_sync'     => $lastSync?->synced_at?->toIso8601String(),
+            'is_syncing'    => false,
+            'is_online'     => $this->connectivity()->isOnline(),
         ];
     }
 
-    /**
-     * Apply a remote change locally
-     */
-    protected function applyRemoteChange(string $resource, array $item): void
-    {
-        $modelClass = $this->getModelClass($resource);
-        if (!$modelClass) {
-            return;
-        }
-
-        $model = new $modelClass;
-        
-        // Mark as coming from sync to avoid loops
-        if (method_exists($model, 'markAsFromSync')) {
-            $model->markAsFromSync();
-        }
-
-        match($item['operation']) {
-            'create', 'update' => $modelClass::updateOrCreate(
-                ['id' => $item['data']['id']],
-                $item['data']
-            ),
-            'delete' => $modelClass::destroy($item['data']['id']),
-            default => null,
-        };
-    }
+    // -------------------------------------------------------------------------
+    // HTTP
+    // -------------------------------------------------------------------------
 
     /**
-     * Log a synchronization
+     * Make an HTTP request to the sync API.
+     *
+     * Authentication is the responsibility of the host application.
+     * Extra headers (e.g. a Bearer token) can be added via the
+     * `offline-sync.security.headers` config key.
      */
-    protected function logSync(string $direction, array $result, int $durationMs): void
+    protected function request(string $method, string $url, array $data = []): \Illuminate\Http\Client\Response
     {
-        if (!config('offline-sync.logging.enabled', true)) {
-            return;
-        }
-
-        SyncLog::create([
-            'synced_at' => now(),
-            'direction' => $direction,
-            'items_count' => $result['synced'] + $result['failed'],
-            'synced_count' => $result['synced'],
-            'failed_count' => $result['failed'],
-            'conflicts_count' => $result['conflicts'] ?? 0,
-            'duration_ms' => $durationMs,
-            'success' => $result['failed'] === 0,
-        ]);
-    }
-
-    /**
-     * Get authentication headers
-     */
-    protected function getAuthHeaders(): array
-    {
-        $method = config('offline-sync.security.auth_method', 'bearer');
-        
-        return match($method) {
-            'bearer' => $this->getBearerAuth(),
-            'api_key' => $this->getApiKeyAuth(),
-            default => [],
-        };
-    }
-
-    /**
-     * Bearer Token authentication
-     */
-    protected function getBearerAuth(): array
-    {
-        $token = $this->getStoredToken() ?? config('offline-sync.security.api_token');
-        
-        return [
-            'Authorization' => 'Bearer ' . $token,
-            'Accept' => 'application/json',
-        ];
-    }
-
-    /**
-     * API Key authentication
-     */
-    protected function getApiKeyAuth(): array
-    {
-        return [
-            'X-API-Key' => config('offline-sync.security.api_token'),
-            'Accept' => 'application/json',
-        ];
-    }
-
-    /**
-     * Retrieve the stored token
-     */
-    protected function getStoredToken(): ?string
-    {
-        $path = storage_path('app/sync_token.enc');
-        
-        if (!file_exists($path)) {
-            return null;
-        }
-        
-        $content = file_get_contents($path);
-        
-        return config('offline-sync.security.token_storage') === 'encrypted'
-            ? Crypt::decryptString($content)
-            : $content;
-    }
-
-    /**
-     * Make a secure HTTP request
-     */
-    protected function secureRequest(string $method, string $url, array $data = []): \Illuminate\Http\Client\Response
-    {
-        if (config('offline-sync.security.require_https', true) && !str_starts_with($url, 'https://')) {
-            throw new \Exception('HTTPS is required for sync operations');
-        }
+        $headers = array_merge(
+            ['Accept' => 'application/json'],
+            config('offline-sync.security.headers', [])
+        );
 
         return Http::timeout(config('offline-sync.connectivity.timeout', 30))
-            ->withHeaders($this->getAuthHeaders())
+            ->withHeaders($headers)
             ->$method($url, $data);
     }
 
     /**
-     * Get the API URL
+     * Build an absolute URL for a sync API path.
      */
-    protected function getApiUrl(string $path): string
+    protected function apiUrl(string $path): string
     {
         return rtrim(config('offline-sync.api_url'), '/') . $path;
     }
 
-    /**
-     * Get the model class
-     */
-    protected function getModelClass(string $resource): ?string
-    {
-        $mapping = config('offline-sync.resource_mapping', []);
-        return $mapping[$resource] ?? null;
-    }
+    // -------------------------------------------------------------------------
+    // Local data
+    // -------------------------------------------------------------------------
 
     /**
-     * Get the timestamp of the last pull
+     * Apply a remote change to the local database.
      */
-    protected function getLastPullTimestamp(string $resource): string
+    protected function applyRemoteChange(string $resource, array $item): void
+    {
+        $modelClass = config('offline-sync.resource_mapping', [])[$resource] ?? null;
+        if (! $modelClass) {
+            return;
+        }
+
+        $model = new $modelClass;
+        if (method_exists($model, 'markAsFromSync')) {
+            $model->markAsFromSync();
+        }
+
+        match ($item['operation']) {
+            'create', 'update' => $modelClass::updateOrCreate(['id' => $item['data']['id']], $item['data']),
+            'delete'           => $modelClass::destroy($item['data']['id']),
+            default            => null,
+        };
+    }
+
+    // -------------------------------------------------------------------------
+    // Logging
+    // -------------------------------------------------------------------------
+
+    protected function logSync(string $direction, array $result, int $durationMs): void
+    {
+        if (! config('offline-sync.logging.enabled', true)) {
+            return;
+        }
+
+        SyncLog::create([
+            'synced_at'       => now(),
+            'direction'       => $direction,
+            'items_count'     => $result['synced'] + $result['failed'],
+            'synced_count'    => $result['synced'],
+            'failed_count'    => $result['failed'],
+            'conflicts_count' => $result['conflicts'] ?? 0,
+            'duration_ms'     => $durationMs,
+            'success'         => $result['failed'] === 0,
+        ]);
+    }
+
+    protected function lastPullTimestamp(string $resource): string
     {
         $log = SyncLog::where('direction', 'pull')
             ->where('details->resource', $resource)
@@ -353,21 +267,18 @@ class SyncEngine
         return $log?->synced_at?->toIso8601String() ?? now()->subDays(30)->toIso8601String();
     }
 
-    /**
-     * Update the timestamp of the last pull
-     */
-    protected function updateLastPullTimestamp(string $resource): void
+    protected function recordPullTimestamp(string $resource): void
     {
         SyncLog::create([
-            'synced_at' => now(),
-            'direction' => 'pull',
-            'items_count' => 0,
-            'synced_count' => 0,
-            'failed_count' => 0,
+            'synced_at'       => now(),
+            'direction'       => 'pull',
+            'items_count'     => 0,
+            'synced_count'    => 0,
+            'failed_count'    => 0,
             'conflicts_count' => 0,
-            'duration_ms' => 0,
-            'success' => true,
-            'details' => ['resource' => $resource],
+            'duration_ms'     => 0,
+            'success'         => true,
+            'details'         => ['resource' => $resource],
         ]);
     }
 }
