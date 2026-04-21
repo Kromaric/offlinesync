@@ -4,6 +4,7 @@
 [![PHP Version](https://img.shields.io/badge/php-%5E8.1-blue.svg)](https://php.net)
 [![Laravel Version](https://img.shields.io/badge/laravel-%5E10.0%7C%5E11.0-orange.svg)](https://laravel.com)
 [![NativePHP Version](https://img.shields.io/badge/nativephp-%5E0.8.0-purple.svg)](https://nativephp.com)
+[![Live Demo](https://img.shields.io/badge/demo-live-6366f1.svg)](https://offlinesync.techparse.fr)
 
 **Offline-first synchronization plugin for NativePHP Mobile applications.**
 
