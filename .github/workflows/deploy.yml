@@ -68,7 +68,7 @@ jobs:
         working-directory: demo
 
       - name: Run plugin tests
-        run: vendor/bin/phpunit --stop-on-failure
+        run: vendor/bin/phpunit --stop-on-failure --no-coverage
 
   # ───────────────────────────────────────────────────────────────────────────
   # JOB 2 — Build & Deploy
